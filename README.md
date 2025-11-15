@@ -391,23 +391,6 @@ They execute **real rental agreements**. We watch what breaks. We fix it.
 
 **Deliverable**: Case studies, testimonials, bug fixes, demo video.
 
----
-
-## The Team
-
-**Firrton** - Founder & Lead Developer
-- Built 11 production smart contracts (7,400+ lines)
-- Integrated Hyperbridge ISMP (first rental use case)
-- Deep Polkadot ecosystem experience
-- Based in Mexico (understands LATAM market firsthand)
-
-**Advisors** (informal):
-- Legal advisor specializing in electronic contracts (Mexico)
-- DeFi strategist from Acala team
-- UX designer with Web3 experience
-
----
-
 ## Why This Matters
 
 Gavin Wood's vision was **self-sovereign living**. Not just self-sovereign identity or finance, but **life**.
