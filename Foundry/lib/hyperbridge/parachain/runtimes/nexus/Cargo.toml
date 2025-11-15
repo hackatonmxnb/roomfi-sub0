@@ -1,0 +1,186 @@
+[package]
+name = "nexus-runtime"
+version = "0.1.1"
+authors = ["Polytope Labs <hello@polytope.technology>"]
+description = "Parachain runtime implementation of the hyperbridge protocol (Polkadot)"
+edition = "2021"
+publish = false
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[build-dependencies]
+substrate-wasm-builder = { workspace = true }
+
+[dependencies]
+# crates.io
+codec = { workspace = true, features = ["derive"] }
+hex-literal = { workspace = true, default-features = true }
+log = { workspace = true }
+json = { workspace = true }
+scale-info = { version = "2.3.1", default-features = false, features = [
+    "derive",
+] }
+smallvec = "1.10.0"
+anyhow = { workspace = true, default-features = false }
+cumulus-pallet-parachain-system = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+
+# ismp modules
+ismp = { workspace = true }
+pallet-ismp = { workspace = true, features = ["unsigned"] }
+pallet-ismp-demo = { workspace = true }
+pallet-ismp-runtime-api = { workspace = true }
+ismp-parachain = { workspace = true }
+ismp-parachain-runtime-api = { workspace = true }
+ismp-sync-committee = { workspace = true }
+ismp-bsc = { workspace = true }
+ismp-grandpa = { workspace = true }
+pallet-ismp-relayer = { workspace = true }
+pallet-ismp-host-executive = { workspace = true }
+pallet-call-decompressor = { workspace = true }
+pallet-xcm-gateway = { workspace = true }
+pallet-token-governor = { workspace = true }
+pallet-fishermen = { workspace = true }
+pallet-state-coprocessor = { workspace = true }
+pallet-token-gateway-inspector = { workspace = true }
+pallet-mmr-tree = { workspace = true }
+pallet-mmr-runtime-api = { workspace = true }
+hyperbridge-client-machine = { workspace = true }
+pallet-bridge-airdrop = { workspace = true }
+ismp-arbitrum = { workspace = true }
+ismp-optimism = { workspace = true }
+ismp-polygon = { workspace = true }
+pallet-consensus-incentives = { workspace = true }
+pallet-messaging-fees = { workspace = true }
+pallet-collator-manager = { workspace = true }
+
+simnode-runtime-api = { workspace = true }
+ismp-tendermint = { workspace = true }
+
+[dependencies.polkadot-sdk]
+workspace = true
+features = [
+    "frame-executive",
+    "frame-support",
+    "frame-system",
+    "frame-system-rpc-runtime-api",
+    "frame-metadata-hash-extension",
+    "pallet-aura",
+    "pallet-authorship",
+    "pallet-balances",
+    "pallet-assets",
+    "pallet-session",
+    "pallet-sudo",
+    "pallet-timestamp",
+    "pallet-transaction-payment",
+    "pallet-transaction-payment-rpc-runtime-api",
+    "pallet-message-queue",
+    "pallet-utility",
+    "pallet-treasury",
+    "pallet-asset-rate",
+    "pallet-collective",
+    "pallet-multisig",
+    "pallet-proxy",
+    "pallet-scheduler",
+    "pallet-preimage",
+    "pallet-conviction-voting",
+    "pallet-referenda",
+    "pallet-whitelist",
+    "pallet-ranked-collective",
+    "sp-api",
+    "sp-io",
+    "sp-block-builder",
+    "sp-consensus-aura",
+    "sp-core",
+    "sp-inherents",
+    "sp-keyring",
+    "sp-offchain",
+    "sp-runtime",
+    "sp-session",
+    "sp-std",
+    "sp-transaction-pool",
+    "sp-version",
+    "sp-storage",
+    "sp-genesis-builder",
+    "sp-mmr-primitives",
+    "pallet-xcm",
+    "polkadot-parachain-primitives",
+    "polkadot-runtime-common",
+    "staging-xcm",
+    "staging-xcm-builder",
+    "staging-xcm-executor",
+    "cumulus-pallet-aura-ext",
+    "cumulus-pallet-dmp-queue",
+    "cumulus-pallet-session-benchmarking",
+    "cumulus-pallet-xcm",
+    "cumulus-pallet-xcmp-queue",
+    "cumulus-primitives-core",
+    "cumulus-primitives-timestamp",
+    "cumulus-primitives-aura",
+    "cumulus-primitives-utility",
+    "pallet-collator-selection",
+    "staging-parachain-info",
+    "parachains-common",
+    "pallet-vesting"
+]
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "log/std",
+    "json/std",
+    "scale-info/std",
+    "ismp/std",
+    "pallet-ismp/std",
+    "pallet-ismp-runtime-api/std",
+    "pallet-ismp-demo/std",
+    "ismp-sync-committee/std",
+    "ismp-bsc/std",
+    "ismp-parachain/std",
+    "ismp-parachain-runtime-api/std",
+    "pallet-ismp-relayer/std",
+    "pallet-ismp-host-executive/std",
+    "pallet-call-decompressor/std",
+    "pallet-xcm-gateway/std",
+    "pallet-token-governor/std",
+    "pallet-mmr-tree/std",
+    "pallet-mmr-runtime-api/std",
+    "simnode-runtime-api/std",
+    "hyperbridge-client-machine/std",
+    "anyhow/std",
+    "pallet-token-gateway-inspector/std",
+    "pallet-fishermen/std",
+    "pallet-state-coprocessor/std",
+    "ismp-grandpa/std",
+    "pallet-bridge-airdrop/std",
+    "ismp-arbitrum/std",
+    "ismp-optimism/std",
+    "pallet-consensus-incentives/std",
+    "polkadot-sdk/std",
+    "ismp-polygon/std",
+    "pallet-consensus-incentives/std",
+    "pallet-messaging-fees/std",
+    "pallet-collator-manager/std",
+    "ismp-tendermint/std"
+]
+runtime-benchmarks = [
+    "frame-benchmarking/runtime-benchmarks",
+    "polkadot-sdk/frame-system-benchmarking",
+    "polkadot-sdk/runtime-benchmarks",
+    "ismp-grandpa/runtime-benchmarks",
+    "ismp-parachain/runtime-benchmarks",
+]
+try-runtime = [
+    "polkadot-sdk/try-runtime",
+    "polkadot-sdk/frame-try-runtime",
+    "cumulus-pallet-parachain-system/try-runtime",
+    "pallet-ismp/try-runtime",
+    "ismp-sync-committee/try-runtime",
+    "pallet-ismp-demo/try-runtime",
+    "pallet-ismp-relayer/try-runtime",
+    "pallet-ismp-host-executive/try-runtime",
+]
+# This must be used when building for a runtime upgrade so metadata hash verification is possible
+metadata-hash = ["substrate-wasm-builder/metadata-hash"]

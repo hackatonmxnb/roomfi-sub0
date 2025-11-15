@@ -1,0 +1,51 @@
+[package]
+name = "evm-state-machine"
+version = "0.1.1"
+edition = "2021"
+description = "Contains methods and types commonly used in evm state verification"
+authors = ["Polytope Labs <hello@polytope.technology>"]
+publish = false
+
+[dependencies]
+# polytope labs
+ismp = { workspace = true }
+ethereum-triedb = { workspace = true }
+geth-primitives = { workspace = true }
+pallet-ismp-host-executive = { workspace = true }
+
+# crates.io
+trie-db = { workspace = true }
+hash-db = { workspace = true }
+alloy-rlp = { workspace = true }
+alloy-rlp-derive = { workspace = true }
+alloy-primitives = { workspace = true }
+hex = { workspace = true, default-features = false }
+hex-literal = { workspace = true }
+ethabi = { workspace = true }
+hash256-std-hasher = { version = "0.15.2", default-features = false }
+codec = { workspace = true, default-features = false }
+polkadot-sdk = { workspace = true, features = ["sp-crypto-hashing"] }
+primitive-types = { workspace = true }
+ibc = { workspace = true, default-features = false }
+tendermint-ics23-primitives = { workspace = true, default-features = false }
+prost = { workspace = true, default-features = false }
+tendermint-primitives ={ workspace = true, default-features = false}
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "ismp/std",
+    "ethereum-triedb/std",
+    "trie-db/std",
+    "hash-db/std",
+    "alloy-rlp/std",
+    "alloy-primitives/std",
+    "ethabi/std",
+    "hash256-std-hasher/std",
+    "hex/std",
+    "geth-primitives/std",
+    "pallet-ismp-host-executive/std",
+    "polkadot-sdk/std",
+    "primitive-types/std"
+]

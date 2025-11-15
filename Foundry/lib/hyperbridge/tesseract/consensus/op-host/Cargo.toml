@@ -1,0 +1,46 @@
+[package]
+name = "op-host"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+anyhow = { workspace = true }
+ethers-contract-abigen = { workspace = true }
+
+
+[dependencies]
+tesseract-evm = { workspace = true }
+ethers = { workspace = true, features = ["rustls"] }
+geth-primitives = { workspace = true }
+ethabi = { workspace = true, features = ["rlp", "full-serde"], default-features = false }
+op-verifier = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+tesseract-primitives = { workspace = true }
+ismp = { workspace = true }
+log = { workspace = true }
+sp-core = { workspace = true,  features = ["full_crypto"] }
+async-trait = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true }
+alloy-primitives = { workspace = true, features = ["rlp"] }
+serde-hex-utils = { workspace = true }
+reqwest = { workspace = true, features=["json"]}
+codec = { workspace = true }
+reqwest-middleware = { workspace = true }
+reqwest-chain = {workspace = true}
+sync-committee-prover = { workspace = true }
+sync-committee-primitives = { workspace = true }
+primitive-types = { workspace = true }
+ismp-optimism = { workspace = true }
+
+[dev-dependencies]
+alloy-rlp = { workspace = true }
+alloy-rlp-derive = { workspace = true }
+hex = { workspace = true }
+dotenv = { workspace = true }
+tesseract-evm = { workspace = true, features = ["testing"] }
+tokio = { workspace = true, features = ["macros", "sync"] }
+hex-literal = { workspace = true}
+ismp-testsuite = { workspace = true }

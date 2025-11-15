@@ -1,0 +1,40 @@
+[package]
+name = "ismp-solidity-abi"
+version = "0.1.1"
+edition = "2021"
+authors = ["Polytope Labs <hello@polytope.technology>"]
+description = "Generated rust types for the ISMP solidity ABI"
+publish = false
+
+
+[build-dependencies]
+anyhow.workspace = true
+ethers-contract-abigen = { workspace = true }
+forge-testsuite = { workspace = true }
+
+[dependencies]
+primitive-types = { workspace = true }
+anyhow = { workspace = true, default-features = true }
+
+ethers = { workspace = true }
+ismp = { workspace = true }
+
+mmr-primitives = { workspace = true, default-features = true, optional = true }
+merkle-mountain-range = { workspace = true, default-features = true, optional = true }
+beefy-verifier-primitives = { workspace = true, default-features = true, optional = true }
+
+[dependencies.polkadot-sdk]
+workspace = true
+optional = true
+features = ["sp-consensus-beefy"]
+
+[features]
+default = ["beefy", "std"]
+std = ["primitive-types/std", "anyhow/std", "ethers/default", "ismp/std"]
+build-abi = []
+beefy = [
+    "merkle-mountain-range",
+    "polkadot-sdk",
+    "beefy-verifier-primitives",
+    "mmr-primitives",
+]

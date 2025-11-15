@@ -1,0 +1,32 @@
+{
+  "network": "AssetHub Paseo Testnet",
+  "chainId": 420420422,
+  "deployer": "0x1f3B26937B64488Fe5a9E1BF1D1a193b58D909b4",
+  "deploymentDate": "2025-01-15",
+  "rpcUrl": "https://testnet-passet-hub-eth-rpc.polkadot.io",
+  "contracts": {
+    "USDT": "0x9f630D9994883D96A1c5E74AC81104FF9E5bFda8",
+    "AcalaYieldStrategy": "0xe698f5053D9450c173C01713E1b5A144E560F254",
+    "RoomFiVault": "0xD2C0Be059ab58367B209290934005f76264b59db",
+    "TenantPassportV2": "0x3dE7d06a9C36da9F603E449E512fab967Cc740a3",
+    "PropertyRegistry": "0x752A5e16899f0849e2B632eA7F7446B2D11d1e17",
+    "DisputeResolver": "0xbb037C5EA4987858Ba2211046297929F6558dB6a",
+    "RentalAgreementImplementation": "0x582fE4A8039769215D54A38f48E415f1E85A7B99",
+    "RentalAgreementFactory": "0x1514e3cCC72bc2FdcA2E7a6d52303917a133E5ae"
+  },
+  "blockExplorerUrls": {
+    "USDT": "https://assethub-paseo.subscan.io/account/0x9f630D9994883D96A1c5E74AC81104FF9E5bFda8",
+    "AcalaYieldStrategy": "https://assethub-paseo.subscan.io/account/0xe698f5053D9450c173C01713E1b5A144E560F254",
+    "RoomFiVault": "https://assethub-paseo.subscan.io/account/0xD2C0Be059ab58367B209290934005f76264b59db",
+    "TenantPassportV2": "https://assethub-paseo.subscan.io/account/0x3dE7d06a9C36da9F603E449E512fab967Cc740a3",
+    "PropertyRegistry": "https://assethub-paseo.subscan.io/account/0x752A5e16899f0849e2B632eA7F7446B2D11d1e17",
+    "DisputeResolver": "https://assethub-paseo.subscan.io/account/0xbb037C5EA4987858Ba2211046297929F6558dB6a",
+    "RentalAgreementImplementation": "https://assethub-paseo.subscan.io/account/0x582fE4A8039769215D54A38f48E415f1E85A7B99",
+    "RentalAgreementFactory": "https://assethub-paseo.subscan.io/account/0x1514e3cCC72bc2FdcA2E7a6d52303917a133E5ae"
+  },
+  "authorizations": {
+    "TenantPassport_authorizedUpdater_Factory": "✅ COMPLETED",
+    "PropertyRegistry_authorizedUpdater_Factory": "✅ COMPLETED"
+  },
+  "notes": "All contracts deployed successfully on AssetHub Paseo Testnet. Authorizations configured automatically."
+}

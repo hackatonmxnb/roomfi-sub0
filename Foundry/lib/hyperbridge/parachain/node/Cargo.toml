@@ -1,0 +1,113 @@
+[package]
+name = "hyperbridge"
+version = "1.4.0"
+authors = ["Polytope Labs <hello@polytope.technology>"]
+description = "The Hyperbridge coprocessor node"
+repository = "https://github.com/polytope-labs/hyperbridge"
+edition = "2021"
+build = "build.rs"
+publish = false
+
+[package.metadata.dist]
+dist = true
+
+[dependencies]
+# crates.io
+clap = { version = "4.0.32", features = ["derive"] }
+log = { workspace = true, default-features = true }
+codec = { workspace = true, default-features = true }
+serde = { workspace = true, default-features = true }
+jsonrpsee = { workspace = true }
+futures = "0.3.28"
+json = { workspace = true, default-features = true }
+
+# local
+gargantua-runtime = { workspace = true, default-features = true }
+nexus-runtime = { workspace = true, default-features = true }
+pallet-ismp-rpc = { workspace = true }
+pallet-mmr-rpc = { workspace = true }
+pallet-ismp-runtime-api = { workspace = true }
+mmr-gadget = { workspace = true }
+pallet-mmr-runtime-api = { workspace = true, default-features = true }
+pallet-ismp = { workspace = true, default-features = true }
+ismp-parachain-inherent = { workspace = true }
+ismp-parachain-runtime-api = { workspace = true }
+ismp-parachain = { workspace = true }
+
+# supporting
+sc-simnode = { workspace = true, features = ["parachain"] }
+simnode-runtime-api = { workspace = true }
+sc-tracing = { workspace = true }
+
+[dependencies.polkadot-sdk]
+workspace = true
+default-features = true
+features = [
+    "frame-system",
+    "frame-benchmarking",
+    "frame-benchmarking-cli",
+    "pallet-transaction-payment-rpc",
+    "sc-basic-authorship",
+    "sc-chain-spec",
+    "sc-cli",
+    "sc-client-api",
+    "sc-consensus",
+    "sc-executor",
+    "sc-network",
+    "sc-network-sync",
+    "sc-network-common",
+    "sc-rpc",
+    "sc-service",
+    "sc-sysinfo",
+    "sc-telemetry",
+    "sc-transaction-pool",
+    "sc-transaction-pool-api",
+    "sp-api",
+    "sp-block-builder",
+    "sp-blockchain",
+    "sp-consensus-aura",
+    "sp-core",
+    "sp-keystore",
+    "sp-offchain",
+    "sc-offchain",
+    "sp-io",
+    "sp-runtime",
+    "sp-session",
+    "sp-timestamp",
+    "sp-transaction-pool",
+    "substrate-frame-rpc-system",
+    "substrate-prometheus-endpoint",
+    "sp-mmr-primitives",
+    "frame-metadata-hash-extension",
+    "polkadot-cli",
+    "polkadot-primitives",
+    "polkadot-service",
+    "staging-xcm",
+    "cumulus-client-cli",
+    "cumulus-primitives-aura",
+    "cumulus-client-consensus-aura",
+    "cumulus-client-consensus-common",
+    "cumulus-client-network",
+    "cumulus-client-service",
+    "cumulus-primitives-core",
+    "cumulus-primitives-parachain-inherent",
+    "cumulus-relay-chain-interface",
+    "cumulus-client-consensus-proposer",
+    "cumulus-client-collator",
+    "pallet-transaction-payment",
+]
+
+
+[build-dependencies]
+polkadot-sdk = { workspace = true, default-features = true, features = [
+    "substrate-build-script-utils",
+] }
+
+[features]
+default = []
+runtime-benchmarks = [
+    "gargantua-runtime/runtime-benchmarks",
+    "nexus-runtime/runtime-benchmarks",
+    "polkadot-sdk/runtime-benchmarks"
+]
+try-runtime = ["gargantua-runtime/try-runtime", "nexus-runtime/try-runtime"]

@@ -1,0 +1,43 @@
+[package]
+name = "pallet-ismp-host-executive"
+version = "0.1.1"
+edition = "2021"
+description = "The host executive is responsible for tracking all connected hosts and is responsible for updating them"
+authors = ["Polytope Labs <hello@polytope.technology>"]
+publish = false
+
+[dependencies]
+# polytope labs
+ismp = { workspace = true }
+pallet-ismp = { workspace = true }
+pallet-hyperbridge = { workspace = true }
+
+# crates.io
+codec = { workspace = true }
+scale-info = { workspace = true }
+anyhow = { workspace = true }
+primitive-types = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-sol-macro = { workspace = true }
+alloy-sol-types = { workspace = true }
+ethabi = { workspace = true }
+
+[dependencies.polkadot-sdk]
+workspace = true
+features = ["frame-support", "frame-system", "sp-runtime"]
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "polkadot-sdk/std",
+    "alloy-primitives/std",
+    "ismp/std",
+    "anyhow/std",
+    "pallet-ismp/std",
+    "pallet-hyperbridge/std",
+    "primitive-types/std",
+    "ethabi/std",
+]
+try-runtime = ["polkadot-sdk/try-runtime"]

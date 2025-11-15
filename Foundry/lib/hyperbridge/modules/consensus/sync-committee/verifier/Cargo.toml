@@ -1,0 +1,30 @@
+[package]
+name = "sync-committee-verifier"
+version = "0.1.1"
+edition = "2021"
+authors = ["Polytope Labs"]
+publish = false
+
+[dependencies]
+sync-committee-primitives = { workspace = true, default-features = false }
+log = { workspace = true, default-features = false }
+anyhow = { workspace = true, default-features = false }
+ssz-rs = { git = "https://github.com/polytope-labs/ssz-rs", branch = "main", default-features = false }
+bls = { workspace = true }
+ark-ec = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ssz-rs/std",
+    "log/std",
+    "sync-committee-primitives/std",
+    "log/std",
+    "anyhow/std",
+    "bls/std",
+    "ark-ec/std",
+]
+
+[dev-dependencies]
+hex = "0.4.3"
+hex-literal = { workspace = true, default-features = true }

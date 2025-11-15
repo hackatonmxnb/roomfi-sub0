@@ -1,0 +1,24 @@
+# Exclude the executable files to be copied into the image
+target
+!target/release/tesseract-consensus
+!target/release/tesseract
+!target/release/telemetry-server
+!target/release/hyperbridge
+
+.github
+.cargo
+
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
