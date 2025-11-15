@@ -974,8 +974,3 @@ if (!isSyncFresh) {
    - Empezar con Phase 1 (Config)
    - Luego Phase 2 (PropertyRegistry)
    - Iterar según prioridades
-
----
-
-**Fecha**: 2025-11-11
-**Versión**: 1.0

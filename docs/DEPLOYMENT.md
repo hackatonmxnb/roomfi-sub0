@@ -233,8 +233,3 @@ Todos los contratos están deployados y funcionando en **AssetHub Paseo Testnet*
 - ✅ Hackathon submission
 
 ---
-
-**Deployment realizado el**: 2025-01-15
-**Por**: Claude Code Assistant 🤖
-
-¡Felicidades! 🚀
