@@ -39,6 +39,7 @@ import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
 import { useUser, UserProvider } from './UserContext';
 import DashboardPage from './DashboardPage';
+import LandingPage from './LandingPage';
 
 
 declare global {
@@ -808,25 +809,26 @@ function App() {
 
   return (
     <>
-      <Header
-        account={account}
-        tokenBalance={tokenBalance}
-        onFundingModalOpen={handleFundingModalOpen}
-        onConnectGoogle={login}
-        onConnectMetaMask={connectWithMetaMask}
-        onViewNFTClick={handleViewNFTClick}
-        onMintNFTClick={mintNewTenantPassport}
-        onViewMyPropertiesClick={handleViewMyProperties}
-        onSavingsClick={handleVaultModalOpen}
-        onHowItWorksClick={() => setShowHowItWorksModal(true)}
-        tenantPassportData={tenantPassportData}
-        isCreatingWallet={isCreatingWallet}
-        setShowOnboarding={setShowOnboarding}
-        showOnboarding={showOnboarding}
-      />
       <Routes>
-        <Route path="/" element={
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app" element={
           <>
+            <Header
+              account={account}
+              tokenBalance={tokenBalance}
+              onFundingModalOpen={handleFundingModalOpen}
+              onConnectGoogle={login}
+              onConnectMetaMask={connectWithMetaMask}
+              onViewNFTClick={handleViewNFTClick}
+              onMintNFTClick={mintNewTenantPassport}
+              onViewMyPropertiesClick={handleViewMyProperties}
+              onSavingsClick={handleVaultModalOpen}
+              onHowItWorksClick={() => setShowHowItWorksModal(true)}
+              tenantPassportData={tenantPassportData}
+              isCreatingWallet={isCreatingWallet}
+              setShowOnboarding={setShowOnboarding}
+              showOnboarding={showOnboarding}
+            />
             <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
               <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
                 <Grid item xs={12} md={5}>
@@ -1348,9 +1350,69 @@ function App() {
             </Modal>
           </>
         } />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/create-pool" element={<CreatePoolPage account={account} tokenDecimals={tokenDecimals} />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/register" element={
+          <>
+            <Header
+              account={account}
+              tokenBalance={tokenBalance}
+              onFundingModalOpen={handleFundingModalOpen}
+              onConnectGoogle={login}
+              onConnectMetaMask={connectWithMetaMask}
+              onViewNFTClick={handleViewNFTClick}
+              onMintNFTClick={mintNewTenantPassport}
+              onViewMyPropertiesClick={handleViewMyProperties}
+              onSavingsClick={handleVaultModalOpen}
+              onHowItWorksClick={() => setShowHowItWorksModal(true)}
+              tenantPassportData={tenantPassportData}
+              isCreatingWallet={isCreatingWallet}
+              setShowOnboarding={setShowOnboarding}
+              showOnboarding={showOnboarding}
+            />
+            <RegisterPage />
+          </>
+        } />
+        <Route path="/create-pool" element={
+          <>
+            <Header
+              account={account}
+              tokenBalance={tokenBalance}
+              onFundingModalOpen={handleFundingModalOpen}
+              onConnectGoogle={login}
+              onConnectMetaMask={connectWithMetaMask}
+              onViewNFTClick={handleViewNFTClick}
+              onMintNFTClick={mintNewTenantPassport}
+              onViewMyPropertiesClick={handleViewMyProperties}
+              onSavingsClick={handleVaultModalOpen}
+              onHowItWorksClick={() => setShowHowItWorksModal(true)}
+              tenantPassportData={tenantPassportData}
+              isCreatingWallet={isCreatingWallet}
+              setShowOnboarding={setShowOnboarding}
+              showOnboarding={showOnboarding}
+            />
+            <CreatePoolPage account={account} tokenDecimals={tokenDecimals} />
+          </>
+        } />
+        <Route path="/dashboard" element={
+          <>
+            <Header
+              account={account}
+              tokenBalance={tokenBalance}
+              onFundingModalOpen={handleFundingModalOpen}
+              onConnectGoogle={login}
+              onConnectMetaMask={connectWithMetaMask}
+              onViewNFTClick={handleViewNFTClick}
+              onMintNFTClick={mintNewTenantPassport}
+              onViewMyPropertiesClick={handleViewMyProperties}
+              onSavingsClick={handleVaultModalOpen}
+              onHowItWorksClick={() => setShowHowItWorksModal(true)}
+              tenantPassportData={tenantPassportData}
+              isCreatingWallet={isCreatingWallet}
+              setShowOnboarding={setShowOnboarding}
+              showOnboarding={showOnboarding}
+            />
+            <DashboardPage />
+          </>
+        } />
       </Routes>
 
       {/* --- MODAL DE LA BÓVEDA (CORREGIDO) --- */}
