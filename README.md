@@ -45,7 +45,6 @@ Every year, **440 million people** move between cities, countries, and continent
 
 #### **1. Legally-Binding Smart Contracts** ⚖️
 
-> **This is what caught judges' attention the most.**
 
 **The Game-Changer**: Our Rental Agreement smart contract **replaces traditional paper contracts** with a legally-enforceable, blockchain-verified document.
 
