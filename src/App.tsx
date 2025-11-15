@@ -5,7 +5,7 @@ import {
   CardMedia, Avatar, Chip, Stack, Grid, useTheme, useMediaQuery, IconButton,
   Menu, MenuItem, Modal, Snackbar, Alert, Drawer, List, ListItem, ListItemButton,
   ListItemText, TextField, Slider, FormControl, InputLabel, Select, OutlinedInput,
-  createTheme, ThemeProvider, Fab
+  createTheme, ThemeProvider, Fab, Skeleton
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import ListIcon from '@mui/icons-material/ViewList';
@@ -191,6 +191,7 @@ function App() {
   const isMobileOnly = useMediaQuery(customTheme.breakpoints.down('sm'));
   const location = useLocation();
   const [matches, setMatches] = useState<any[] | null>(null);
+  const [isLoadingMatches, setIsLoadingMatches] = useState<boolean>(true);
 
   // Estados de UI
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -727,8 +728,10 @@ function App() {
   useEffect(() => {
     if (location.state?.matches && location.state.matches.length > 0) {
       setMatches(location.state.matches);
+      setIsLoadingMatches(false);
     } else {
       const user_id = '7c74d216-7c65-47e6-b02d-1e6954f39ba7';
+      setIsLoadingMatches(true);
       fetch(process.env.REACT_APP_API + "/matchmaking/match/top?user_id=" + user_id, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -745,11 +748,16 @@ function App() {
               lng: randomNearby(baseLng, 0.025),
             }));
             setMatches(matchesWithCoords);
+            setIsLoadingMatches(false);
           } else {
             setMatches([]);
+            setIsLoadingMatches(false);
           }
         })
-        .catch(() => setMatches(null));
+        .catch(() => {
+          setMatches(null);
+          setIsLoadingMatches(false);
+        });
     }
   }, [location.state]);
 
@@ -895,12 +903,19 @@ function App() {
                 </Grid>
                 <Grid item xs={12} md={7}>
                   <Paper elevation={3} sx={{
-                    p: { xs: 1, sm: 2 },
+                    p: { xs: 2, sm: 3 },
                     bgcolor: '#f5f7fa',
-                    textAlign: 'center',
                     borderRadius: 4,
                     minHeight: 0
                   }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                        Personaliza tu búsqueda
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Filtra por zona, precio y amenidades
+                      </Typography>
+                    </Box>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -911,7 +926,7 @@ function App() {
                             size="small"
                             sx={{ bgcolor: 'white', borderRadius: 2, mb: 1 }}
                           />
-                          <Box sx={{ mt: 0.5, px: 2.5 }}>
+                          <Box sx={{ mt: 0.5, px: { xs: 0.5, sm: 2.5 } }}>
                             <Typography gutterBottom sx={{ fontWeight: 500, color: 'primary.main', mb: 0.5, fontSize: '0.95rem', textAlign: 'left' }}>
                               ¿Qué precio buscas?
                             </Typography>
@@ -994,6 +1009,11 @@ function App() {
 
               <Box sx={{ position: 'relative', width: '100%', minHeight: '100vh', mt: { xs: 4, sm: 6, md: 8 } }}>
                 <Box sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
+                  {!isLoaded && (
+                    <Box sx={{ width: '100%', height: '100%', p: 3 }}>
+                      <Skeleton variant="rectangular" width="100%" height="100%" sx={{ borderRadius: 4 }} />
+                    </Box>
+                  )}
                   {isLoaded && (
                     <GoogleMap
                       mapContainerStyle={{ width: '100%', height: '100%' }}
@@ -1059,8 +1079,25 @@ function App() {
                       PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, bgcolor: 'white', border: '1px solid #e0e0e0', maxHeight: '70vh', p: 2 } }}
                     >
                       <Box sx={{ overflowY: 'auto', maxHeight: '100vh' }}>
-                        {(matches ?? []).map((listing: any, index: number) => (
-                          <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
+                        {isLoadingMatches && (
+                          <Stack spacing={2}>
+                            {[1, 2, 3].map(key => (
+                              <Card key={key} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 1 }}>
+                                <CardContent>
+                                  <Skeleton variant="text" width="40%" />
+                                  <Skeleton variant="rectangular" height={100} sx={{ mt: 1, borderRadius: 2 }} />
+                                  <Skeleton variant="text" width="60%" sx={{ mt: 1 }} />
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </Stack>
+                        )}
+                        {!isLoadingMatches && (matches ?? []).map((listing: any, index: number) => (
+                          <Card
+                            key={`${listing.id}-${index}`}
+                            sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}
+                            onClick={() => setSelectedListing(listing)}
+                          >
                             <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
                               <Avatar src={listing.user?.avatar} alt={listing.user?.name} sx={{ mr: 1 }} />
                               <Typography fontWeight={700}>Sara</Typography>
@@ -1089,8 +1126,25 @@ function App() {
                   </>
                 ) : (
                   <Box sx={{ position: 'relative', zIndex: 1, width: { xs: '100%', sm: 400 }, maxWidth: 480, height: { xs: 340, sm: 500, md: '100vh' }, overflowY: 'auto', bgcolor: 'white', border: '1px solid #e0e0e0', borderRadius: 3, p: 2, ml: { sm: 4 }, mt: { xs: 0, sm: 0 } }}>
-                    {(matches ?? []).map((listing: any, index: number) => (
-                      <Card key={`${listing.id}-${index}`} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}>
+                    {isLoadingMatches && (
+                      <Stack spacing={2}>
+                        {[1, 2, 3, 4].map(key => (
+                          <Card key={key} sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0' }}>
+                            <CardContent>
+                              <Skeleton variant="text" width="50%" />
+                              <Skeleton variant="rectangular" height={120} sx={{ mt: 1, borderRadius: 2 }} />
+                              <Skeleton variant="text" width="70%" sx={{ mt: 1 }} />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Stack>
+                    )}
+                    {!isLoadingMatches && (matches ?? []).map((listing: any, index: number) => (
+                      <Card
+                        key={`${listing.id}-${index}`}
+                        sx={{ borderRadius: 4, boxShadow: 'none', border: '1px solid #e0e0e0', mb: 2, cursor: 'pointer', '&:hover': { boxShadow: 4, borderColor: 'primary.main' } }}
+                        onClick={() => setSelectedListing(listing)}
+                      >
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pb: 0 }}>
                           <Avatar src={listing.user?.avatar || ''} alt={listing.user?.name || ''} sx={{ mr: 1 }} />
                           <Typography fontWeight={700}>John</Typography>
