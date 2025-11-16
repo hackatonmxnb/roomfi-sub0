@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Paper, Modal, Select, MenuItem, FormControl
+  AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Paper, Select, MenuItem, FormControl
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link as RouterLink } from 'react-router-dom';
@@ -10,8 +10,6 @@ interface HeaderProps {
   account?: string | null;
   tokenBalance?: number;
   onFundingModalOpen?: () => void;
-  onConnectGoogle: () => void;
-  onConnectMetaMask: () => void;
   onDisconnect: () => void;
   onViewNFTClick: () => void;
   onMintNFTClick: () => void;
@@ -26,7 +24,7 @@ interface HeaderProps {
   onNetworkChange: (network: 'paseo' | 'arbitrum') => void;
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onDisconnect, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, onSavingsClick, onHowItWorksClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding, activeNetwork, onNetworkChange }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onDisconnect, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, onSavingsClick, onHowItWorksClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding, activeNetwork, onNetworkChange }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const isMobile = window.innerWidth < 900;
 
@@ -148,42 +146,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           )}
         </Toolbar>
       </AppBar>
-      <Modal open={showOnboarding} onClose={() => setShowOnboarding(false)}>
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          bgcolor: 'background.paper',
-          borderRadius: 3,
-          boxShadow: 24,
-          p: 4,
-          minWidth: 320,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2
-        }}>
-          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Conecta tu Wallet</Typography>
-          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); setShowOnboarding(false); }}>Conectar Wallet EVM (Subwallet / MetaMask)</Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            startIcon={
-              <img
-                src="https://developers.google.com/identity/images/g-logo.png"
-                alt="Google"
-                style={{ width: 20, height: 20 }}
-              />
-            }
-            onClick={() => { onConnectGoogle(); setShowOnboarding(false); }}
-            disabled={isCreatingWallet}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
-          >
-            {isCreatingWallet ? 'Creando wallet...' : 'Iniciar sesión con Google'}
-          </Button>
-        </Box>
-      </Modal>
+      {/* El modal de conexión ahora se renderiza en App.tsx con WalletConnectModal */}
     </>
   );
 } 

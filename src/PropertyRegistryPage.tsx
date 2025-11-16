@@ -36,9 +36,9 @@ const VERIFICATION_STATUS = {
 
 interface PropertyData { id: number; name: string; propertyType: number; fullAddress: string; city: string; state: string; neighborhood: string; bedrooms: number; bathrooms: number; squareMeters: number; hasParking: boolean; petsAllowed: boolean; description: string; monthlyRent: string; securityDeposit: string; landlord: string; verificationStatus: number; currentReputation: number; isAvailableForRent: boolean; }
 
-interface PropertyRegistryPageProps { account: string | null; provider: ethers.BrowserProvider | null; activeNetwork: 'paseo' | 'arbitrum'; onNetworkChange: (network: 'paseo' | 'arbitrum') => void; onDisconnect: () => void; onConnectMetaMask: () => void; tokenBalance: number; tenantPassportData: any; }
+interface PropertyRegistryPageProps { account: string | null; provider: ethers.BrowserProvider | null; activeNetwork: 'paseo' | 'arbitrum'; onNetworkChange: (network: 'paseo' | 'arbitrum') => void; onDisconnect: () => void; tokenBalance: number; tenantPassportData: any; setShowOnboarding: React.Dispatch<React.SetStateAction<boolean>>; }
 
-export default function PropertyRegistryPage({ account, provider, activeNetwork, onNetworkChange, onDisconnect, onConnectMetaMask, tokenBalance, tenantPassportData }: PropertyRegistryPageProps) {
+export default function PropertyRegistryPage({ account, provider, activeNetwork, onNetworkChange, onDisconnect, tokenBalance, tenantPassportData, setShowOnboarding }: PropertyRegistryPageProps) {
   const [tabValue, setTabValue] = useState(0);
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -130,7 +130,7 @@ export default function PropertyRegistryPage({ account, provider, activeNetwork,
 
   return (
     <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh' }}>
-      <Header account={account} tokenBalance={tokenBalance} onFundingModalOpen={() => {}} onConnectGoogle={() => {}} onConnectMetaMask={onConnectMetaMask} onDisconnect={onDisconnect} onViewNFTClick={() => {}} onMintNFTClick={() => {}} onViewMyPropertiesClick={() => {}} onSavingsClick={() => {}} onHowItWorksClick={() => {}} tenantPassportData={tenantPassportData} setShowOnboarding={() => {}} showOnboarding={false} activeNetwork={activeNetwork} onNetworkChange={onNetworkChange} />
+      <Header account={account} tokenBalance={tokenBalance} onFundingModalOpen={() => {}} onDisconnect={onDisconnect} onViewNFTClick={() => {}} onMintNFTClick={() => {}} onViewMyPropertiesClick={() => {}} onSavingsClick={() => {}} onHowItWorksClick={() => {}} tenantPassportData={tenantPassportData} setShowOnboarding={setShowOnboarding} showOnboarding={false} activeNetwork={activeNetwork} onNetworkChange={onNetworkChange} />
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Paper elevation={3} sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
@@ -150,7 +150,7 @@ export default function PropertyRegistryPage({ account, provider, activeNetwork,
         {!account ? (
           <Paper elevation={2} sx={{ p: 6, textAlign: 'center' }}>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>🔐 Conecta tu wallet</Typography>
-            <Button variant="contained" size="large" onClick={onConnectMetaMask} sx={{ mt: 2 }}>Conectar Wallet</Button>
+            <Button variant="contained" size="large" onClick={() => setShowOnboarding(true)} sx={{ mt: 2 }}>Conectar Wallet</Button>
           </Paper>
         ) : properties.length === 0 ? (
           <Paper elevation={2} sx={{ p: 6, textAlign: 'center' }}>

@@ -25,6 +25,7 @@ import CreatePoolPage from './CreatePoolPage';
 import RegisterPage from './RegisterPage';
 import PropertyRegistryPage from './PropertyRegistryPage';
 import SubwalletAuthModal from './SubwalletAuthModal';
+import WalletModal, { WalletType } from './WalletModal';
 import Header from './Header';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
@@ -51,6 +52,7 @@ import { MOCK_MODE, mockGetPassport, mockMintPassport, mockGetTokenBalance } fro
 declare global {
   interface Window {
     ethereum?: any;
+    SubWallet?: any;
   }
 }
 
@@ -582,103 +584,85 @@ function App() {
   const disconnectWallet = async () => {
     console.log('🔌 Desconectando wallet...');
     
-    // Intentar revocar permisos (EIP-2255)
-    if (window.ethereum) {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_revokePermissions',
-          params: [{ eth_accounts: {} }],
-        });
-        console.log('✅ Permisos revocados exitosamente');
-      } catch (error) {
-        console.log('⚠️ No se pudieron revocar permisos automáticamente. Revócalos manualmente desde Subwallet.');
-        console.log('Instrucciones: Abre Subwallet → Settings → Connected Sites → Encuentra este sitio → Desconectar');
-      }
-    }
-    
     setAccount(null);
     setProvider(null);
     setTenantPassportData(null);
     setTokenBalance(0);
+    localStorage.removeItem('walletType');
+    
     setNotification({ 
       open: true, 
-      message: '🔌 Wallet desconectada. Si quieres revocar permisos completamente, hazlo desde la extensión de Subwallet.', 
+      message: '🔌 Wallet desconectada exitosamente', 
       severity: 'info' 
     });
   };
 
-  const connectWithMetaMask = async () => {
-    if (typeof window.ethereum === 'undefined') {
-      setNotification({ open: true, message: 'No se detectó una wallet EVM (Subwallet o MetaMask).', severity: 'warning' });
+  const connectWithWallet = async (walletType: WalletType) => {
+    let walletProvider: any;
+    
+    if (walletType === 'metamask') {
+      walletProvider = window.ethereum;
+    } else if (walletType === 'subwallet') {
+      walletProvider = (window as any).SubWallet;
+    }
+
+    if (!walletProvider) {
+      setNotification({ 
+        open: true, 
+        message: `No se encontró ${walletType}. Por favor, instala la extensión.`, 
+        severity: 'warning' 
+      });
       return;
     }
 
     try {
-      console.log('🔌 Iniciando conexión con wallet EVM...');
+      console.log(`🔌 Conectando con ${walletType}...`);
       console.log('🌐 Red seleccionada:', activeNetwork);
       
-      // Verificar si ya hay cuentas conectadas
-      const existingAccounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (existingAccounts && existingAccounts.length > 0) {
-        console.log('⚠️ Ya hay cuentas conectadas:', existingAccounts[0]);
-        console.log('💡 Tip: Para que se abra Subwallet, primero desconecta este sitio desde la extensión.');
-      }
-      
-      // Primero, intentar cambiar a la red correcta
-      const switched = await switchToNetwork(activeNetwork);
-      if (!switched) {
-        console.error('❌ No se pudo cambiar a la red', activeNetwork);
-        setNotification({ 
-          open: true, 
-          message: `No se pudo cambiar a ${NETWORKS_CONFIG[activeNetwork].chainName}. Cámbiala manualmente en tu wallet.`, 
-          severity: 'error' 
-        });
-        return;
-      }
-      
-      console.log('✅ Red cambiada exitosamente');
-      
-      // Ahora pedir acceso a las cuentas
-      // Si ya están conectadas, esto NO abrirá la wallet (comportamiento estándar de wallets)
-      console.log('🔑 Solicitando acceso a cuentas...');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No se obtuvieron cuentas de la wallet');
-      }
-      
-      const userAccount = accounts[0];
-      console.log('✅ Cuenta conectada:', userAccount);
-      
-      const browserProvider = new ethers.BrowserProvider(window.ethereum);
+      const browserProvider = new ethers.BrowserProvider(walletProvider);
+      const accounts = await browserProvider.send('eth_requestAccounts', []);
+      const currentSigner = await browserProvider.getSigner();
       const network = await browserProvider.getNetwork();
+      const currentAccount = accounts[0];
+
+      setProvider(browserProvider);
+      setAccount(currentAccount);
+      localStorage.setItem('walletType', walletType);
+      
+      console.log('✅ Cuenta conectada:', currentAccount);
       console.log('📡 ChainId actual:', network.chainId.toString());
       
-      setProvider(browserProvider);
-      setAccount(userAccount);
-      setNotification({ open: true, message: '✅ Wallet conectada exitosamente', severity: 'success' });
+      // Verificar red correcta
+      const expectedNetwork = NETWORKS_CONFIG[activeNetwork];
+      if (network.chainId !== BigInt(expectedNetwork.chainId)) {
+        console.log('⚠️ Red incorrecta, intentando cambiar...');
+        await switchToNetwork(activeNetwork);
+      }
       
-      handleOnboardingClose();
+      setNotification({ 
+        open: true, 
+        message: `✅ Conectado con ${walletType}`, 
+        severity: 'success' 
+      });
 
     } catch (error: any) {
-      console.error("❌ Error al conectar wallet:", error);
+      console.error(`❌ Error al conectar con ${walletType}:`, error);
       
-      let errorMessage = 'Error al conectar con la wallet.';
+      let errorMessage = `Error al conectar con ${walletType}.`;
       
-      // Detectar error de Subwallet en producción y mostrar modal visual
-      if (error.message && error.message.includes('not been authorized')) {
-        console.log('🔐 Detectado error de autorización de Subwallet');
-        setShowSubwalletAuthModal(true);
-        return; // No mostrar notificación, el modal es más claro
-      } else if (error.code === 4001) {
+      if (error.code === 4001) {
         errorMessage = 'Conexión rechazada por el usuario.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
       setNotification({ open: true, message: errorMessage, severity: 'error' });
+      
+      setAccount(null);
+      setProvider(null);
     }
   };
+
 
   const fetchTokenBalance = useCallback(async (prov: ethers.Provider, acc: string) => {
     // MODO MOCK: Usar balance simulado
@@ -957,6 +941,11 @@ function App() {
     scope: 'openid email profile',
   });
 
+  // Función wrapper para usar en los modales
+  const connectWithGoogle = () => {
+    login();
+  };
+
   useEffect(() => {
     if (location.state?.matches && location.state.matches.length > 0) {
       setMatches(location.state.matches);
@@ -1114,8 +1103,6 @@ function App() {
               account={account}
               tokenBalance={tokenBalance}
               onFundingModalOpen={handleFundingModalOpen}
-              onConnectGoogle={login}
-              onConnectMetaMask={connectWithMetaMask}
               onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
@@ -1764,8 +1751,6 @@ function App() {
               account={account}
               tokenBalance={tokenBalance}
               onFundingModalOpen={handleFundingModalOpen}
-              onConnectGoogle={login}
-              onConnectMetaMask={connectWithMetaMask}
               onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
@@ -1788,8 +1773,6 @@ function App() {
               account={account}
               tokenBalance={tokenBalance}
               onFundingModalOpen={handleFundingModalOpen}
-              onConnectGoogle={login}
-              onConnectMetaMask={connectWithMetaMask}
               onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
@@ -1813,9 +1796,9 @@ function App() {
             activeNetwork={activeNetwork}
             onNetworkChange={(net) => setActiveNetwork(net)}
             onDisconnect={disconnectWallet}
-            onConnectMetaMask={connectWithMetaMask}
             tokenBalance={tokenBalance}
             tenantPassportData={tenantPassportData}
+            setShowOnboarding={setShowOnboarding}
           />
         } />
         <Route path="/dashboard" element={
@@ -1824,8 +1807,6 @@ function App() {
               account={account}
               tokenBalance={tokenBalance}
               onFundingModalOpen={handleFundingModalOpen}
-              onConnectGoogle={login}
-              onConnectMetaMask={connectWithMetaMask}
               onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
@@ -1981,6 +1962,15 @@ function App() {
         open={showSubwalletAuthModal}
         onClose={() => setShowSubwalletAuthModal(false)}
         domain={window.location.origin}
+      />
+
+      {/* Modal de Conexión con Wallet */}
+      <WalletModal
+        open={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onConnect={connectWithWallet}
+        onConnectGoogle={connectWithGoogle}
+        isCreatingWallet={isCreatingWallet}
       />
     </>
   );
