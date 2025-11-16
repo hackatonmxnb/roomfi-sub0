@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
-  AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Paper, Modal
+  AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText, Paper, Modal, Select, MenuItem, FormControl
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link as RouterLink } from 'react-router-dom';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 interface HeaderProps {
   account?: string | null;
@@ -11,23 +12,35 @@ interface HeaderProps {
   onFundingModalOpen?: () => void;
   onConnectGoogle: () => void;
   onConnectMetaMask: () => void;
+  onDisconnect: () => void;
   onViewNFTClick: () => void;
   onMintNFTClick: () => void;
   onViewMyPropertiesClick: () => void;
   onSavingsClick: () => void;
-  onHowItWorksClick: () => void; // <-- AÑADIDO
+  onHowItWorksClick: () => void;
   tenantPassportData: any;
   isCreatingWallet?: boolean;
   setShowOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
   showOnboarding: boolean;
+  activeNetwork: 'paseo' | 'arbitrum';
+  onNetworkChange: (network: 'paseo' | 'arbitrum') => void;
 }
 
-export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, onSavingsClick, onHowItWorksClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding }: HeaderProps) {
+export default function Header({ account, tokenBalance, onFundingModalOpen, onConnectGoogle, onConnectMetaMask, onDisconnect, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, onSavingsClick, onHowItWorksClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding, activeNetwork, onNetworkChange }: HeaderProps) {
   const [drawerMenuOpen, setDrawerMenuOpen] = useState(false);
   const isMobile = window.innerWidth < 900;
 
   const handleOpenOnboarding = () => setShowOnboarding(true);
   const handleCloseOnboarding = () => setShowOnboarding(false);
+
+  const handleNetworkChange = (event: SelectChangeEvent<string>) => {
+    onNetworkChange(event.target.value as 'paseo' | 'arbitrum');
+  };
+
+  const handleDisconnect = () => {
+    onDisconnect();
+    setDrawerMenuOpen(false);
+  };
 
   return (
     <>
@@ -42,6 +55,22 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
               />
             </RouterLink>
           </Box>
+          <FormControl size="small" sx={{ minWidth: 120, mr: 2 }}>
+            <Select
+              value={activeNetwork}
+              onChange={handleNetworkChange}
+              displayEmpty
+              sx={{
+                bgcolor: 'background.paper',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'divider',
+                },
+              }}
+            >
+              <MenuItem value="paseo">Paseo (Polkadot)</MenuItem>
+              <MenuItem value="arbitrum">Arbitrum</MenuItem>
+            </Select>
+          </FormControl>
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexGrow: 1 }}>
               {/* Botones que solo aparecen si la wallet está conectada */}
@@ -96,15 +125,14 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           ) : (
             <>
               {account ? (
-                <Paper elevation={2} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 2, borderRadius: 2 }}>
+                <Paper elevation={2} sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, borderRadius: 2 }}>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance?.toFixed(2)} MXNB</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`}</Typography>
                   </Box>
                   <Button variant="contained" size="small" onClick={onFundingModalOpen}>Añadir Fondos</Button>
-                  {account && (
-                    <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
-                  )}
+                  <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
+                  <Button variant="text" size="small" onClick={handleDisconnect} color="error">Desconectar</Button>
                 </Paper>
               ) : (
                 <Button
@@ -137,7 +165,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onCo
           gap: 2
         }}>
           <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Conecta tu Wallet</Typography>
-          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); setShowOnboarding(false); }}>Conectar con MetaMask</Button>
+          <Button variant="contained" fullWidth onClick={() => { onConnectMetaMask(); setShowOnboarding(false); }}>Conectar Wallet EVM (Subwallet / MetaMask)</Button>
           <Button
             variant="outlined"
             fullWidth

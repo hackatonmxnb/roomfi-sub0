@@ -24,22 +24,26 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import CreatePoolPage from './CreatePoolPage';
 import RegisterPage from './RegisterPage';
 import Header from './Header';
-import {
-  TENANT_PASSPORT_ABI,
-  TENANT_PASSPORT_ADDRESS,
-  PROPERTY_INTEREST_POOL_ADDRESS,
-  PROPERTY_INTEREST_POOL_ABI,
-  NETWORK_CONFIG,
-  MXNBT_ADDRESS,
-  MXNB_ABI,
-  INTEREST_GENERATOR_ADDRESS,
-  INTEREST_GENERATOR_ABI,
-} from './web3/config';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
 import { useUser, UserProvider } from './UserContext';
 import DashboardPage from './DashboardPage';
 import LandingPage from './LandingPage';
+import { 
+  EvmNetwork, 
+  NETWORKS_CONFIG, 
+  CONTRACTS, 
+  PROPERTY_INTEREST_POOL_ADDRESS, 
+  PROPERTY_INTEREST_POOL_ABI, 
+  MXNB_ABI,
+  INTEREST_GENERATOR_ADDRESS,
+  INTEREST_GENERATOR_ABI,
+  MXNBT_ADDRESS,
+  TENANT_PASSPORT_ADDRESS,
+  VAULT_ADDRESS
+} from './web3/config';
+import TENANT_PASSPORT_ABI from './web3/abis/TENANT_PASSPORT_ABI.json';
+import { MOCK_MODE, mockGetPassport, mockMintPassport, mockGetTokenBalance } from './web3/mockData';
 
 
 declare global {
@@ -56,6 +60,33 @@ interface TenantPassportData {
   propertiesOwned: number;
   tokenId: BigInt;
   mintingWalletAddress?: string;
+  // V2 Extended fields
+  propertiesRented?: number;
+  consecutiveOnTimePayments?: number;
+  totalMonthsRented?: number;
+  referralCount?: number;
+  disputesCount?: number;
+  totalRentPaid?: number;
+  lastActivityTime?: number;
+  isVerified?: boolean;
+  badges?: {
+    // KYC Badges (6)
+    VERIFIED_ID: boolean;
+    VERIFIED_INCOME: boolean;
+    VERIFIED_EMPLOYMENT: boolean;
+    VERIFIED_STUDENT: boolean;
+    VERIFIED_PROFESSIONAL: boolean;
+    CLEAN_CREDIT: boolean;
+    // Performance Badges (8)
+    EARLY_ADOPTER: boolean;
+    RELIABLE_TENANT: boolean;
+    LONG_TERM_TENANT: boolean;
+    ZERO_DISPUTES: boolean;
+    NO_DAMAGE_HISTORY: boolean;
+    FAST_RESPONDER: boolean;
+    HIGH_VALUE: boolean;
+    MULTI_PROPERTY: boolean;
+  };
 }
 
 const customTheme = createTheme({
@@ -165,13 +196,14 @@ function App() {
   const { updateUser, user } = useUser();
   const navigate = useNavigate();
 
-  // Initialize portal instance
+  // Initialize portal instance (usando paseo como default)
+  const defaultNetwork: EvmNetwork = 'paseo';
   const portal = new Portal({
     apiKey: process.env.REACT_APP_PORTAL_API_KEY,
     rpcConfig: {
-      [NETWORK_CONFIG.chainId.toString()]: NETWORK_CONFIG.rpcUrl,
+      [NETWORKS_CONFIG[defaultNetwork].chainId.toString()]: NETWORKS_CONFIG[defaultNetwork].rpcUrl,
     },
-    chainId: NETWORK_CONFIG.chainId.toString(),
+    chainId: NETWORKS_CONFIG[defaultNetwork].chainId.toString(),
   });
 
   const createPortalWallet = async () => {
@@ -201,6 +233,7 @@ function App() {
   const [amenidades, setAmenidades] = React.useState<string[]>([]);
 
   // Estados de Web3
+  const [activeNetwork, setActiveNetwork] = useState<EvmNetwork>('paseo');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -269,13 +302,17 @@ function App() {
   const checkAllowance = useCallback(async () => {
     if (!account || !provider || !vaultAmount) return;
     try {
-      const tokenContract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, provider);
-      const currentAllowance = await tokenContract.allowance(account, INTEREST_GENERATOR_ADDRESS);
+      const tokenAddress = CONTRACTS[activeNetwork]?.MXNBT_ADDRESS;
+      const vaultAddress = CONTRACTS[activeNetwork]?.VAULT_ADDRESS;
+      if (!tokenAddress || !vaultAddress) return;
+      
+      const tokenContract = new ethers.Contract(tokenAddress, MXNB_ABI, provider);
+      const currentAllowance = await tokenContract.allowance(account, vaultAddress);
       setAllowance(Number(ethers.formatUnits(currentAllowance, tokenDecimals)));
     } catch (error) {
       console.error("Error checking allowance:", error);
     }
-  }, [account, provider, vaultAmount, tokenDecimals]);
+  }, [account, provider, vaultAmount, tokenDecimals, activeNetwork]);
 
   const fetchVaultData = useCallback(async () => {
     if (!account || !provider) return;
@@ -468,51 +505,189 @@ function App() {
   };
   // --- FIN DE NUEVA LÓGICA ---
 
-  const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
-    const network = await prov.getNetwork();
-    if (network.chainId !== BigInt(NETWORK_CONFIG.chainId)) {
+  const switchToNetwork = async (network: EvmNetwork): Promise<boolean> => {
+    const networkConfig = NETWORKS_CONFIG[network];
+    const chainIdHex = `0x${networkConfig.chainId.toString(16)}`;
+
+    try {
+      // Intentar cambiar de red
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: chainIdHex }],
+      });
+      return true;
+    } catch (switchError: any) {
+      // Si la red no existe (código 4902), agregarla
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: chainIdHex,
+                chainName: networkConfig.chainName,
+                rpcUrls: [networkConfig.rpcUrl],
+                nativeCurrency: {
+                  name: network === 'paseo' ? 'PAS' : 'ETH',
+                  symbol: network === 'paseo' ? 'PAS' : 'ETH',
+                  decimals: 18,
+                },
+              },
+            ],
+          });
+          return true;
+        } catch (addError) {
+          console.error('Error al agregar la red:', addError);
+          setNotification({
+            open: true,
+            message: `No se pudo agregar la red ${networkConfig.chainName}.`,
+            severity: 'error',
+          });
+          return false;
+        }
+      }
+      console.error('Error al cambiar de red:', switchError);
       setNotification({
         open: true,
-        message: `Por favor, cambia tu wallet a la red ${NETWORK_CONFIG.chainName}.`,
-        severity: 'warning',
+        message: `No se pudo cambiar a la red ${networkConfig.chainName}.`,
+        severity: 'error',
       });
       return false;
+    }
+  };
+
+  const checkNetwork = async (prov: ethers.BrowserProvider): Promise<boolean> => {
+    const network = await prov.getNetwork();
+    const expectedNetwork = NETWORKS_CONFIG[activeNetwork];
+    if (network.chainId !== BigInt(expectedNetwork.chainId)) {
+      // Intentar cambiar automáticamente
+      const switched = await switchToNetwork(activeNetwork);
+      if (!switched) {
+        setNotification({
+          open: true,
+          message: `Por favor, cambia tu wallet a la red ${expectedNetwork.chainName}.`,
+          severity: 'warning',
+        });
+        return false;
+      }
+      // Esperar un momento para que la wallet se actualice
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     return true;
   };
 
+  const disconnectWallet = async () => {
+    console.log('🔌 Desconectando wallet...');
+    
+    // Intentar revocar permisos (EIP-2255)
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_revokePermissions',
+          params: [{ eth_accounts: {} }],
+        });
+        console.log('✅ Permisos revocados exitosamente');
+      } catch (error) {
+        console.log('⚠️ No se pudieron revocar permisos automáticamente. Revócalos manualmente desde Subwallet.');
+        console.log('Instrucciones: Abre Subwallet → Settings → Connected Sites → Encuentra este sitio → Desconectar');
+      }
+    }
+    
+    setAccount(null);
+    setProvider(null);
+    setTenantPassportData(null);
+    setTokenBalance(0);
+    setNotification({ 
+      open: true, 
+      message: '🔌 Wallet desconectada. Si quieres revocar permisos completamente, hazlo desde la extensión de Subwallet.', 
+      severity: 'info' 
+    });
+  };
+
   const connectWithMetaMask = async () => {
     if (typeof window.ethereum === 'undefined') {
-      setNotification({ open: true, message: 'MetaMask no está instalado.', severity: 'warning' });
+      setNotification({ open: true, message: 'No se detectó una wallet EVM (Subwallet o MetaMask).', severity: 'warning' });
       return;
     }
 
     try {
+      console.log('🔌 Iniciando conexión con wallet EVM...');
+      console.log('🌐 Red seleccionada:', activeNetwork);
+      
+      // Verificar si ya hay cuentas conectadas
+      const existingAccounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (existingAccounts && existingAccounts.length > 0) {
+        console.log('⚠️ Ya hay cuentas conectadas:', existingAccounts[0]);
+        console.log('💡 Tip: Para que se abra Subwallet, primero desconecta este sitio desde la extensión.');
+      }
+      
+      // Primero, intentar cambiar a la red correcta
+      const switched = await switchToNetwork(activeNetwork);
+      if (!switched) {
+        console.error('❌ No se pudo cambiar a la red', activeNetwork);
+        setNotification({ 
+          open: true, 
+          message: `No se pudo cambiar a ${NETWORKS_CONFIG[activeNetwork].chainName}. Cámbiala manualmente en tu wallet.`, 
+          severity: 'error' 
+        });
+        return;
+      }
+      
+      console.log('✅ Red cambiada exitosamente');
+      
+      // Ahora pedir acceso a las cuentas
+      // Si ya están conectadas, esto NO abrirá la wallet (comportamiento estándar de wallets)
+      console.log('🔑 Solicitando acceso a cuentas...');
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No se obtuvieron cuentas de la wallet');
+      }
+      
       const userAccount = accounts[0];
+      console.log('✅ Cuenta conectada:', userAccount);
       
       const browserProvider = new ethers.BrowserProvider(window.ethereum);
+      const network = await browserProvider.getNetwork();
+      console.log('📡 ChainId actual:', network.chainId.toString());
       
-      if (await checkNetwork(browserProvider)) {
-        setProvider(browserProvider);
-        setAccount(userAccount);
-        setNotification({ open: true, message: 'Wallet conectada exitosamente.', severity: 'success' });
-      } else {
-        setAccount(null);
-        setProvider(null);
-      }
+      setProvider(browserProvider);
+      setAccount(userAccount);
+      setNotification({ open: true, message: '✅ Wallet conectada exitosamente', severity: 'success' });
       
       handleOnboardingClose();
 
-    } catch (error) {
-      console.error("Error connecting with MetaMask:", error);
-      setNotification({ open: true, message: 'Error al conectar con MetaMask.', severity: 'error' });
+    } catch (error: any) {
+      console.error("❌ Error al conectar wallet:", error);
+      
+      let errorMessage = 'Error al conectar con la wallet.';
+      if (error.code === 4001) {
+        errorMessage = 'Conexión rechazada por el usuario.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setNotification({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
   const fetchTokenBalance = useCallback(async (prov: ethers.Provider, acc: string) => {
+    // MODO MOCK: Usar balance simulado
+    if (MOCK_MODE) {
+      try {
+        const mockBalance = await mockGetTokenBalance(acc);
+        setTokenBalance(mockBalance);
+        setTokenDecimals(18); // Mock decimals
+      } catch (error) {
+        console.error("Error en mock balance:", error);
+      }
+      return;
+    }
+    
+    // MODO REAL: Obtener balance del contrato
     try {
-        const contract = new ethers.Contract(MXNBT_ADDRESS, MXNB_ABI, prov);
+        const tokenAddress = CONTRACTS[activeNetwork].MXNBT_ADDRESS;
+        const contract = new ethers.Contract(tokenAddress, MXNB_ABI, prov);
         
         const [rawBalance, decimals] = await Promise.all([
             contract.balanceOf(acc),
@@ -521,7 +696,7 @@ function App() {
 
         console.log("--- [DIAGNÓSTICO DE BALANCE] ---");
         console.log("Billetera (Account):", acc);
-        console.log("Contrato del Token (Address):", MXNBT_ADDRESS);
+        console.log("Contrato del Token (Address):", tokenAddress);
         console.log("Decimales del Contrato:", decimals.toString());
         console.log("Balance Crudo (Raw):", rawBalance.toString());
         console.log("---------------------------------");
@@ -533,7 +708,7 @@ function App() {
         console.error("Error fetching token balance:", error);
         setNotification({ open: true, message: 'Error al obtener el balance del token.', severity: 'error' });
     }
-  }, []);
+  }, [activeNetwork]);
 
   const handleViewMyProperties = async () => {
     if (!account || !provider) {
@@ -592,6 +767,29 @@ function App() {
   };
 
   const getOrCreateTenantPassport = useCallback(async (userAddress: string) => {
+    // MODO MOCK: Usar datos simulados si no hay contratos desplegados
+    if (MOCK_MODE) {
+      console.log('🎭 MODO MOCK ACTIVADO - Usando datos simulados');
+      try {
+        let mockData = await mockGetPassport(userAddress);
+        
+        if (!mockData) {
+          console.log('🎭 No hay passport mock, creando uno...');
+          setNotification({ open: true, message: 'Creando tu Tenant Passport (simulado)...', severity: 'info' });
+          mockData = await mockMintPassport(userAddress);
+          setNotification({ open: true, message: '✅ Tenant Passport creado (simulado)', severity: 'success' });
+        }
+        
+        setTenantPassportData(mockData as any);
+        return mockData as any;
+      } catch (error) {
+        console.error('Error en mock:', error);
+        setNotification({ open: true, message: 'Error al simular passport', severity: 'error' });
+        return null;
+      }
+    }
+    
+    // MODO REAL: Usar contratos desplegados
     if (!provider) {
         setNotification({ open: true, message: 'Provider no inicializado. Conecta tu wallet.', severity: 'error' });
         return null;
@@ -599,14 +797,30 @@ function App() {
     if (!(await checkNetwork(provider))) return null;
 
     try {
-      const readOnlyContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+      console.log('🎫 Obteniendo Tenant Passport...');
+      console.log('👤 Usuario:', userAddress);
+      console.log('🌐 Red activa:', activeNetwork);
+      
+      const passportAddress = CONTRACTS[activeNetwork].TENANT_PASSPORT_ADDRESS;
+      console.log('📍 Dirección del contrato:', passportAddress);
+      
+      if (!passportAddress || passportAddress === '') {
+        throw new Error(`No hay dirección de contrato configurada para la red ${activeNetwork}`);
+      }
+      
+      const readOnlyContract = new ethers.Contract(passportAddress, TENANT_PASSPORT_ABI, provider);
+      console.log('📜 Contrato inicializado');
+      
+      console.log('🔍 Consultando balance de NFTs...');
       const balance = await readOnlyContract.balanceOf(userAddress);
+      console.log('💳 Balance de NFTs:', balance.toString());
+      
       let finalTokenId: BigInt;
 
       if (balance.toString() === '0') {
         console.log("No Tenant Passport found. Minting a new one...");
         const signer = await provider.getSigner();
-        const contractWithSigner = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+        const contractWithSigner = new ethers.Contract(passportAddress, TENANT_PASSPORT_ABI, signer);
         const tx = await contractWithSigner.mintForSelf();
         await tx.wait();
         setNotification({ open: true, message: '¡Tu Tenant Passport se ha creado!', severity: 'success' });
@@ -617,7 +831,17 @@ function App() {
       }
 
       const info = await readOnlyContract.getTenantInfo(finalTokenId);
-      const passportData = {
+      
+      // V2: Try to fetch extended metrics and badges
+      let metrics, allBadges;
+      try {
+        metrics = await readOnlyContract.getTenantMetrics(finalTokenId);
+        allBadges = await readOnlyContract.getAllBadges(finalTokenId);
+      } catch (e) {
+        console.log("V2 methods not available or contract is V1");
+      }
+
+      const passportData: TenantPassportData = {
         reputation: Number(info.reputation),
         paymentsMade: Number(info.paymentsMade),
         paymentsMissed: Number(info.paymentsMissed),
@@ -627,14 +851,62 @@ function App() {
         mintingWalletAddress: userAddress,
       };
 
+      // Add V2 fields if available
+      if (metrics) {
+        passportData.propertiesRented = Number(metrics.propertiesRented || 0);
+        passportData.consecutiveOnTimePayments = Number(metrics.consecutiveOnTimePayments || 0);
+        passportData.totalMonthsRented = Number(metrics.totalMonthsRented || 0);
+        passportData.referralCount = Number(metrics.referralCount || 0);
+        passportData.disputesCount = Number(metrics.disputesCount || 0);
+        passportData.totalRentPaid = Number(ethers.formatUnits(metrics.totalRentPaid || 0, tokenDecimals));
+        passportData.lastActivityTime = Number(metrics.lastActivityTime || 0);
+        passportData.isVerified = Boolean(metrics.isVerified || false);
+      }
+
+      // Parse badges array (14 booleans)
+      if (allBadges && allBadges.length === 14) {
+        passportData.badges = {
+          VERIFIED_ID: allBadges[0],
+          VERIFIED_INCOME: allBadges[1],
+          VERIFIED_EMPLOYMENT: allBadges[2],
+          VERIFIED_STUDENT: allBadges[3],
+          VERIFIED_PROFESSIONAL: allBadges[4],
+          CLEAN_CREDIT: allBadges[5],
+          EARLY_ADOPTER: allBadges[6],
+          RELIABLE_TENANT: allBadges[7],
+          LONG_TERM_TENANT: allBadges[8],
+          ZERO_DISPUTES: allBadges[9],
+          NO_DAMAGE_HISTORY: allBadges[10],
+          FAST_RESPONDER: allBadges[11],
+          HIGH_VALUE: allBadges[12],
+          MULTI_PROPERTY: allBadges[13],
+        };
+      }
+
+      console.log('✅ Datos del passport procesados:', passportData);
       setTenantPassportData(passportData);
       return passportData;
-    } catch (error) {
-      console.error("Error getting or creating Tenant Passport:", error);
-      setNotification({ open: true, message: 'Error al gestionar el Tenant Passport.', severity: 'error' });
+    } catch (error: any) {
+      console.error("❌ Error al gestionar Tenant Passport:", error);
+      console.error("Detalles del error:", {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        data: error.data
+      });
+      
+      let errorMessage = 'Error al gestionar el Tenant Passport.';
+      if (error.message) {
+        errorMessage += ` Detalle: ${error.message}`;
+      }
+      if (error.reason) {
+        errorMessage += ` Razón: ${error.reason}`;
+      }
+      
+      setNotification({ open: true, message: errorMessage, severity: 'error' });
       return null;
     }
-  }, [provider]);
+  }, [provider, activeNetwork, tokenDecimals]);
 
   const handleViewNFTClick = async () => {
     if (account) {
@@ -653,8 +925,9 @@ function App() {
       if (!(await checkNetwork(provider))) return;
 
       try {
+          const passportAddress = CONTRACTS[activeNetwork].TENANT_PASSPORT_ADDRESS;
           const signer = await provider.getSigner();
-          const contract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, signer);
+          const contract = new ethers.Contract(passportAddress, TENANT_PASSPORT_ABI, signer);
           const tx = await contract.mintForSelf();
           await tx.wait();
           setNotification({ open: true, message: '¡Tu Tenant Passport se ha minteado exitosamente!', severity: 'success' });
@@ -672,7 +945,8 @@ function App() {
     }
     
     // Verificar si el usuario tiene un Tenant Passport
-    const passportContract = new ethers.Contract(TENANT_PASSPORT_ADDRESS, TENANT_PASSPORT_ABI, provider);
+    const passportAddress = CONTRACTS[activeNetwork].TENANT_PASSPORT_ADDRESS;
+    const passportContract = new ethers.Contract(passportAddress, TENANT_PASSPORT_ABI, provider);
     const balance = await passportContract.balanceOf(account);
 
     if (balance.toString() === '0') {
@@ -781,9 +1055,27 @@ function App() {
         }
       };
 
-      const handleChainChanged = () => {
-        // Reload the app to re-initialize the provider and check the network
-        window.location.reload();
+      const handleChainChanged = async (chainIdHex: string) => {
+        const chainId = parseInt(chainIdHex, 16);
+        console.log('Red cambiada a chainId:', chainId);
+        
+        // Detectar automáticamente qué red es y actualizar activeNetwork
+        if (chainId === NETWORKS_CONFIG.paseo.chainId) {
+          setActiveNetwork('paseo');
+        } else if (chainId === NETWORKS_CONFIG.arbitrum.chainId) {
+          setActiveNetwork('arbitrum');
+        }
+        
+        // Re-inicializar el provider
+        if (window.ethereum) {
+          const newProvider = new ethers.BrowserProvider(window.ethereum);
+          setProvider(newProvider);
+          
+          // Refrescar balance si hay cuenta conectada
+          if (account) {
+            fetchTokenBalance(newProvider, account);
+          }
+        }
       };
 
       window.ethereum.on('accountsChanged', handleAccountsChanged);
@@ -794,7 +1086,46 @@ function App() {
         window.ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
+  }, [account, fetchTokenBalance]);
+
+  // Detectar si ya hay una wallet conectada al cargar
+  useEffect(() => {
+    const checkExistingConnection = async () => {
+      if (window.ethereum) {
+        try {
+          // Obtener cuentas sin pedir permiso (solo si ya está conectado)
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            console.log('🔗 Wallet ya conectada detectada:', accounts[0]);
+            const browserProvider = new ethers.BrowserProvider(window.ethereum);
+            const network = await browserProvider.getNetwork();
+            console.log('📡 Red actual:', network.chainId.toString());
+            
+            // Detectar qué red es
+            if (network.chainId === BigInt(NETWORKS_CONFIG.paseo.chainId)) {
+              setActiveNetwork('paseo');
+            } else if (network.chainId === BigInt(NETWORKS_CONFIG.arbitrum.chainId)) {
+              setActiveNetwork('arbitrum');
+            }
+            
+            setAccount(accounts[0]);
+            setProvider(browserProvider);
+          }
+        } catch (error) {
+          console.error('Error al verificar conexión existente:', error);
+        }
+      }
+    };
+    
+    checkExistingConnection();
   }, []);
+
+  // Cambiar la wallet cuando el usuario cambia la red desde el selector
+  useEffect(() => {
+    if (provider && account && window.ethereum) {
+      switchToNetwork(activeNetwork);
+    }
+  }, [activeNetwork]);
 
   // --- USE EFFECT PARA LA BÓVEDA ---
   useEffect(() => {
@@ -827,6 +1158,7 @@ function App() {
               onFundingModalOpen={handleFundingModalOpen}
               onConnectGoogle={login}
               onConnectMetaMask={connectWithMetaMask}
+              onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
               onViewMyPropertiesClick={handleViewMyProperties}
@@ -836,6 +1168,8 @@ function App() {
               isCreatingWallet={isCreatingWallet}
               setShowOnboarding={setShowOnboarding}
               showOnboarding={showOnboarding}
+              activeNetwork={activeNetwork}
+              onNetworkChange={(net) => setActiveNetwork(net)}
             />
             <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4, md: 8 }, px: { xs: 1, sm: 2, md: 3 } }}>
               <Grid container spacing={{ xs: 2, sm: 4 }} alignItems="center">
@@ -1323,34 +1657,96 @@ function App() {
             </Modal>
 
             <Modal open={showTenantPassportModal} onClose={() => setShowTenantPassportModal(false)} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 400, width: '100%' }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 }}>Tu Tenant Passport</Typography>
+              <Paper sx={{ p: 4, borderRadius: 2, maxWidth: 600, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                <Typography variant="h5" component="h2" sx={{ mb: 2, fontWeight: 700 }}>Tu Tenant Passport V2</Typography>
                 {tenantPassportData ? (
-                  <Stack spacing={1}>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Reputación:</Typography> {tenantPassportData.reputation}%
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Pagos a tiempo:</Typography> {tenantPassportData.paymentsMade}
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Pagos no realizados:</Typography> {tenantPassportData.paymentsMissed}
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Propiedades Poseídas:</Typography> {tenantPassportData.propertiesOwned}
-                    </Typography>
-                    <Typography variant="body1">
-                      <Typography component="span" fontWeight="bold">Saldo pendiente:</Typography> ${tenantPassportData.outstandingBalance.toLocaleString()} MXNB
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                  <>
+                    {/* Verification Status */}
+                    {tenantPassportData.isVerified && (
+                      <Chip label="✓ Verificado" color="success" sx={{ mb: 2, fontWeight: 600 }} />
+                    )}
+                    
+                    {/* Main Metrics */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">Reputación</Typography>
+                        <Typography variant="h6" fontWeight="bold" color="primary.main">{tenantPassportData.reputation}%</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">Pagos a tiempo</Typography>
+                        <Typography variant="h6" fontWeight="bold">{tenantPassportData.paymentsMade}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">Pagos perdidos</Typography>
+                        <Typography variant="h6" fontWeight="bold" color={tenantPassportData.paymentsMissed > 0 ? 'error.main' : 'inherit'}>{tenantPassportData.paymentsMissed}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">Disputas</Typography>
+                        <Typography variant="h6" fontWeight="bold" color={tenantPassportData.disputesCount && tenantPassportData.disputesCount > 0 ? 'warning.main' : 'inherit'}>{tenantPassportData.disputesCount || 0}</Typography>
+                      </Grid>
+                    </Grid>
+
+                    {/* Extended Metrics (V2) */}
+                    {tenantPassportData.totalMonthsRented !== undefined && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Métricas Extendidas</Typography>
+                        <Stack spacing={0.5}>
+                          <Typography variant="body2">
+                            <Typography component="span" fontWeight="bold">Meses rentando:</Typography> {tenantPassportData.totalMonthsRented}
+                          </Typography>
+                          <Typography variant="body2">
+                            <Typography component="span" fontWeight="bold">Propiedades rentadas:</Typography> {tenantPassportData.propertiesRented || 0}
+                          </Typography>
+                          <Typography variant="body2">
+                            <Typography component="span" fontWeight="bold">Racha de pagos a tiempo:</Typography> {tenantPassportData.consecutiveOnTimePayments || 0}
+                          </Typography>
+                          <Typography variant="body2">
+                            <Typography component="span" fontWeight="bold">Total pagado (vida):</Typography> ${tenantPassportData.totalRentPaid?.toLocaleString() || 0}
+                          </Typography>
+                          <Typography variant="body2">
+                            <Typography component="span" fontWeight="bold">Referidos:</Typography> {tenantPassportData.referralCount || 0}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    )}
+
+                    {/* Badges */}
+                    {tenantPassportData.badges && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Badges KYC</Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                          <Chip label="ID Verificado" color={tenantPassportData.badges.VERIFIED_ID ? 'success' : 'default'} size="small" />
+                          <Chip label="Ingreso" color={tenantPassportData.badges.VERIFIED_INCOME ? 'success' : 'default'} size="small" />
+                          <Chip label="Empleo" color={tenantPassportData.badges.VERIFIED_EMPLOYMENT ? 'success' : 'default'} size="small" />
+                          <Chip label="Estudiante" color={tenantPassportData.badges.VERIFIED_STUDENT ? 'success' : 'default'} size="small" />
+                          <Chip label="Profesional" color={tenantPassportData.badges.VERIFIED_PROFESSIONAL ? 'success' : 'default'} size="small" />
+                          <Chip label="Crédito Limpio" color={tenantPassportData.badges.CLEAN_CREDIT ? 'success' : 'default'} size="small" />
+                        </Box>
+                        
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Badges de Performance</Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          <Chip label="Early Adopter" color={tenantPassportData.badges.EARLY_ADOPTER ? 'primary' : 'default'} size="small" />
+                          <Chip label="Confiable" color={tenantPassportData.badges.RELIABLE_TENANT ? 'primary' : 'default'} size="small" />
+                          <Chip label="Largo Plazo" color={tenantPassportData.badges.LONG_TERM_TENANT ? 'primary' : 'default'} size="small" />
+                          <Chip label="Sin Disputas" color={tenantPassportData.badges.ZERO_DISPUTES ? 'primary' : 'default'} size="small" />
+                          <Chip label="Sin Daños" color={tenantPassportData.badges.NO_DAMAGE_HISTORY ? 'primary' : 'default'} size="small" />
+                          <Chip label="Respuesta Rápida" color={tenantPassportData.badges.FAST_RESPONDER ? 'primary' : 'default'} size="small" />
+                          <Chip label="Alto Valor" color={tenantPassportData.badges.HIGH_VALUE ? 'primary' : 'default'} size="small" />
+                          <Chip label="Multi Propiedad" color={tenantPassportData.badges.MULTI_PROPERTY ? 'primary' : 'default'} size="small" />
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Info Footer */}
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 2 }}>
                       Token ID: {tenantPassportData.tokenId.toString()}
                     </Typography>
                     {tenantPassportData.mintingWalletAddress && (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="caption" color="text.secondary" display="block">
                         Wallet: {tenantPassportData.mintingWalletAddress.substring(0, 6)}...{tenantPassportData.mintingWalletAddress.substring(tenantPassportData.mintingWalletAddress.length - 4)}
                       </Typography>
                     )}
-                  </Stack>
+                  </>
                 ) : (
                   <Typography variant="body1">No se encontró un Tenant Passport para tu wallet.</Typography>
                 )}
@@ -1412,6 +1808,7 @@ function App() {
               onFundingModalOpen={handleFundingModalOpen}
               onConnectGoogle={login}
               onConnectMetaMask={connectWithMetaMask}
+              onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
               onViewMyPropertiesClick={handleViewMyProperties}
@@ -1421,6 +1818,8 @@ function App() {
               isCreatingWallet={isCreatingWallet}
               setShowOnboarding={setShowOnboarding}
               showOnboarding={showOnboarding}
+              activeNetwork={activeNetwork}
+              onNetworkChange={(net) => setActiveNetwork(net)}
             />
             <RegisterPage />
           </>
@@ -1433,6 +1832,7 @@ function App() {
               onFundingModalOpen={handleFundingModalOpen}
               onConnectGoogle={login}
               onConnectMetaMask={connectWithMetaMask}
+              onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
               onViewMyPropertiesClick={handleViewMyProperties}
@@ -1442,6 +1842,8 @@ function App() {
               isCreatingWallet={isCreatingWallet}
               setShowOnboarding={setShowOnboarding}
               showOnboarding={showOnboarding}
+              activeNetwork={activeNetwork}
+              onNetworkChange={(net) => setActiveNetwork(net)}
             />
             <CreatePoolPage account={account} tokenDecimals={tokenDecimals} />
           </>
@@ -1454,6 +1856,7 @@ function App() {
               onFundingModalOpen={handleFundingModalOpen}
               onConnectGoogle={login}
               onConnectMetaMask={connectWithMetaMask}
+              onDisconnect={disconnectWallet}
               onViewNFTClick={handleViewNFTClick}
               onMintNFTClick={mintNewTenantPassport}
               onViewMyPropertiesClick={handleViewMyProperties}
@@ -1463,6 +1866,8 @@ function App() {
               isCreatingWallet={isCreatingWallet}
               setShowOnboarding={setShowOnboarding}
               showOnboarding={showOnboarding}
+              activeNetwork={activeNetwork}
+              onNetworkChange={(net) => setActiveNetwork(net)}
             />
             <DashboardPage />
           </>

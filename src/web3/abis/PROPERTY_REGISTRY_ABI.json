@@ -1,0 +1,132 @@
+[
+  {
+    "type": "function",
+    "name": "registerProperty",
+    "inputs": [
+      {"name": "name", "type": "string"},
+      {"name": "propertyType", "type": "uint8"},
+      {"name": "fullAddress", "type": "string"},
+      {"name": "city", "type": "string"},
+      {"name": "state", "type": "string"},
+      {"name": "postalCode", "type": "string"},
+      {"name": "neighborhood", "type": "string"},
+      {"name": "latitude", "type": "int256"},
+      {"name": "longitude", "type": "int256"},
+      {"name": "bedrooms", "type": "uint8"},
+      {"name": "bathrooms", "type": "uint8"},
+      {"name": "squareMeters", "type": "uint256"},
+      {"name": "hasParking", "type": "bool"},
+      {"name": "petsAllowed", "type": "bool"},
+      {"name": "smokingAllowed", "type": "bool"},
+      {"name": "description", "type": "string"},
+      {"name": "amenities", "type": "string"},
+      {"name": "monthlyRent", "type": "uint256"},
+      {"name": "securityDeposit", "type": "uint256"},
+      {"name": "minLeaseDuration", "type": "uint32"},
+      {"name": "maxLeaseDuration", "type": "uint32"}
+    ],
+    "outputs": [
+      {"name": "propertyId", "type": "uint256"}
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getProperty",
+    "inputs": [
+      {"name": "propertyId", "type": "uint256"}
+    ],
+    "outputs": [
+      {"name": "name", "type": "string"},
+      {"name": "propertyType", "type": "uint8"},
+      {"name": "fullAddress", "type": "string"},
+      {"name": "city", "type": "string"},
+      {"name": "state", "type": "string"},
+      {"name": "neighborhood", "type": "string"},
+      {"name": "bedrooms", "type": "uint8"},
+      {"name": "bathrooms", "type": "uint8"},
+      {"name": "squareMeters", "type": "uint256"},
+      {"name": "hasParking", "type": "bool"},
+      {"name": "petsAllowed", "type": "bool"},
+      {"name": "description", "type": "string"},
+      {"name": "monthlyRent", "type": "uint256"},
+      {"name": "securityDeposit", "type": "uint256"},
+      {"name": "landlord", "type": "address"},
+      {"name": "verificationStatus", "type": "uint8"},
+      {"name": "currentReputation", "type": "uint32"},
+      {"name": "isAvailableForRent", "type": "bool"}
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalSupply",
+    "inputs": [],
+    "outputs": [
+      {"name": "", "type": "uint256"}
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "tokenByIndex",
+    "inputs": [
+      {"name": "index", "type": "uint256"}
+    ],
+    "outputs": [
+      {"name": "", "type": "uint256"}
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ownerOf",
+    "inputs": [
+      {"name": "tokenId", "type": "uint256"}
+    ],
+    "outputs": [
+      {"name": "", "type": "address"}
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isPropertyAvailableForRent",
+    "inputs": [
+      {"name": "propertyId", "type": "uint256"}
+    ],
+    "outputs": [
+      {"name": "", "type": "bool"}
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "updateProperty",
+    "inputs": [
+      {"name": "propertyId", "type": "uint256"},
+      {"name": "newMonthlyRent", "type": "uint256"},
+      {"name": "newSecurityDeposit", "type": "uint256"},
+      {"name": "newDescription", "type": "string"}
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "PropertyRegistered",
+    "inputs": [
+      {"name": "propertyId", "type": "uint256", "indexed": true},
+      {"name": "landlord", "type": "address", "indexed": true},
+      {"name": "name", "type": "string", "indexed": false}
+    ]
+  },
+  {
+    "type": "event",
+    "name": "PropertyVerificationUpdated",
+    "inputs": [
+      {"name": "propertyId", "type": "uint256", "indexed": true},
+      {"name": "newStatus", "type": "uint8", "indexed": false}
+    ]
+  }
+]
