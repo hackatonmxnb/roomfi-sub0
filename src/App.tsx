@@ -711,7 +711,7 @@ function App() {
 
   const handleViewMyProperties = () => {
     // V2: Navegar a la nueva página de PropertyRegistry
-    navigate('/properties');
+    navigate('/app/properties');
   };
 
   const getOrCreateTenantPassport = useCallback(async (userAddress: string) => {
@@ -1811,7 +1811,7 @@ function App() {
             <CreatePoolPage account={account} tokenDecimals={tokenDecimals} />
           </>
         } />
-        <Route path="/properties" element={
+        <Route path="/app/properties" element={
           <PropertyRegistryPage
             account={account}
             provider={provider}
@@ -1845,7 +1845,7 @@ function App() {
             <DashboardPage />
           </>
         } />
-        <Route path="/agreements" element={
+        <Route path="/app/agreements" element={
           <MyAgreementsPage
             provider={provider}
             signer={signer}
@@ -1855,7 +1855,7 @@ function App() {
             setShowOnboarding={setShowOnboarding}
           />
         } />
-        <Route path="/agreement/:address" element={
+        <Route path="/app/agreement/:address" element={
           <RentalAgreementView
             provider={provider}
             signer={signer}

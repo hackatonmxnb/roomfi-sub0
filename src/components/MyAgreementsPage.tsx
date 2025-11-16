@@ -140,7 +140,7 @@ const MyAgreementsPage: React.FC<MyAgreementsPageProps> = ({
   const handleCreateSuccess = (agreementAddress: string) => {
     setShowCreateDialog(false);
     fetchAgreements();
-    navigate(`/agreement/${agreementAddress}`);
+    navigate(`/app/agreement/${agreementAddress}`);
   };
 
   if (!account) {
@@ -383,7 +383,7 @@ const MyAgreementsPage: React.FC<MyAgreementsPageProps> = ({
                       fullWidth
                       variant="contained"
                       startIcon={<VisibilityIcon />}
-                      onClick={() => navigate(`/agreement/${agreement.agreementAddress}`)}
+                      onClick={() => navigate(`/app/agreement/${agreement.agreementAddress}`)}
                     >
                       Ver Detalles
                     </Button>

@@ -74,6 +74,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onDi
               {/* Botones que solo aparecen si la wallet está conectada */}
               {account && (
                 <>
+                  <Button component={RouterLink} to="/app/agreements" sx={{ color: 'primary.main', fontWeight: 600 }}>Agreements</Button>
                   <Button component={RouterLink} to="/create-pool" sx={{ color: 'primary.main', fontWeight: 600 }}>Crear Pool</Button>
                   <Button onClick={() => onViewMyPropertiesClick?.()} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
                   <Button onClick={() => onSavingsClick?.()} sx={{ color: 'primary.main', fontWeight: 600 }}>Bóveda</Button>
@@ -81,8 +82,6 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onDi
               )}
               {/* Botones que siempre son visibles en desktop */}
               <Button onClick={() => onHowItWorksClick?.()} sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verifica roomie</Button>
-              <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Para empresas</Button>
             </Box>
           )}
           {isMobile && <Box sx={{ flexGrow: 1 }} />}
@@ -104,18 +103,30 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onDi
                   onKeyDown={() => setDrawerMenuOpen(false)}
                 >
                   <List>
+                    {account && (
+                      <>
+                        <ListItem disablePadding>
+                          <ListItemButton component={RouterLink} to="/app/agreements"><ListItemText primary="Agreements" /></ListItemButton>
+                        </ListItem>
+                        <ListItem disablePadding>
+                          <ListItemButton component={RouterLink} to="/create-pool"><ListItemText primary="Crear Pool" /></ListItemButton>
+                        </ListItem>
+                        <ListItem disablePadding>
+                          <ListItemButton onClick={() => { onViewMyPropertiesClick?.(); setDrawerMenuOpen(false); }}><ListItemText primary="Mis Propiedades" /></ListItemButton>
+                        </ListItem>
+                        <ListItem disablePadding>
+                          <ListItemButton onClick={() => { onSavingsClick?.(); setDrawerMenuOpen(false); }}><ListItemText primary="Bóveda" /></ListItemButton>
+                        </ListItem>
+                      </>
+                    )}
                     <ListItem disablePadding>
                       <ListItemButton><ListItemText primary="Como funciona" /></ListItemButton>
                     </ListItem>
-                    <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Verifica roomie" /></ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding>
-                      <ListItemButton><ListItemText primary="Para empresas" /></ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding>
-                      <ListItemButton onClick={handleOpenOnboarding}><ListItemText primary="Conectar" /></ListItemButton>
-                    </ListItem>
+                    {!account && (
+                      <ListItem disablePadding>
+                        <ListItemButton onClick={handleOpenOnboarding}><ListItemText primary="Conectar" /></ListItemButton>
+                      </ListItem>
+                    )}
                   </List>
                 </Box>
               </Drawer>
