@@ -46,9 +46,7 @@ export default function PropertyRegistryPage({ account, provider, activeNetwork,
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'info' });
   const [formData, setFormData] = useState({ name: '', propertyType: 1, fullAddress: '', city: '', state: '', postalCode: '', neighborhood: '', latitude: '', longitude: '', bedrooms: 1, bathrooms: 1, squareMeters: '', hasParking: false, petsAllowed: false, smokingAllowed: false, description: '', amenities: '', monthlyRent: '', securityDeposit: '', minLeaseDuration: 6, maxLeaseDuration: 12 });
 
-  useEffect(() => { if (account && provider) fetchProperties(); }, [account, provider, activeNetwork]);
-
-  const fetchProperties = async () => {
+  const fetchProperties = React.useCallback(async () => {
     if (MOCK_MODE) {
       setProperties([
         { id: 1, name: 'Departamento Moderno en Condesa', propertyType: 1, fullAddress: 'Av. Amsterdam 123', city: 'Ciudad de México', state: 'CDMX', neighborhood: 'Condesa', bedrooms: 2, bathrooms: 2, squareMeters: 85, hasParking: true, petsAllowed: true, description: 'Hermoso departamento con acabados de lujo', monthlyRent: '25000', securityDeposit: '50000', landlord: account || '0x...', verificationStatus: 2, currentReputation: 950, isAvailableForRent: true },
@@ -58,9 +56,15 @@ export default function PropertyRegistryPage({ account, provider, activeNetwork,
       return;
     }
     // Lógica real para cargar del contrato (omitida por brevedad)
-  };
+  }, [account, provider, activeNetwork]);
 
-  const handleRegisterProperty = async () => {
+  useEffect(() => { 
+    if (account && provider) {
+      fetchProperties(); 
+    }
+  }, [account, provider, activeNetwork, fetchProperties]);
+
+  const handleRegisterProperty = React.useCallback(async () => {
     if (!provider || !account) { setNotification({ open: true, message: 'Conecta tu wallet primero', severity: 'error' }); return; }
     if (MOCK_MODE) {
       setNotification({ open: true, message: '🎭 [MOCK] Propiedad registrada', severity: 'success' });
@@ -69,7 +73,7 @@ export default function PropertyRegistryPage({ account, provider, activeNetwork,
       return;
     }
     // Lógica real omitida
-  };
+  }, [provider, account, formData, properties]);
 
   const PropertyCard = ({ property }: { property: PropertyData }) => {
     const verificationInfo = VERIFICATION_STATUS[property.verificationStatus as keyof typeof VERIFICATION_STATUS];
