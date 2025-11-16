@@ -647,7 +647,7 @@ MIT - Build on this. Fork it. Improve it.
 
 <div align="center">
 
-**Making housing portable, one NFT at a time.**
+**“Unlock the future of property with RoomFi: a global, instant, and hybrid marketplace designed for the next generation of real estate and and digital sovereignty”**
 
 ![Polkadot](https://img.shields.io/badge/Polkadot-E6007A?style=flat-square&logo=polkadot&logoColor=white)
 ![Hyperbridge](https://img.shields.io/badge/Hyperbridge-FF6B35?style=flat-square)
