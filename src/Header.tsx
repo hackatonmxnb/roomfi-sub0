@@ -11,17 +11,17 @@ interface HeaderProps {
   tokenBalance?: number;
   onFundingModalOpen?: () => void;
   onDisconnect: () => void;
-  onViewNFTClick: () => void;
-  onMintNFTClick: () => void;
-  onViewMyPropertiesClick: () => void;
-  onSavingsClick: () => void;
-  onHowItWorksClick: () => void;
-  tenantPassportData: any;
+  onViewNFTClick?: () => void;
+  onMintNFTClick?: () => void;
+  onViewMyPropertiesClick?: () => void;
+  onSavingsClick?: () => void;
+  onHowItWorksClick?: () => void;
+  tenantPassportData?: any;
   isCreatingWallet?: boolean;
   setShowOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
-  showOnboarding: boolean;
+  showOnboarding?: boolean;
   activeNetwork: 'paseo' | 'arbitrum';
-  onNetworkChange: (network: 'paseo' | 'arbitrum') => void;
+  onNetworkChange?: (network: 'paseo' | 'arbitrum') => void;
 }
 
 export default function Header({ account, tokenBalance, onFundingModalOpen, onDisconnect, onViewNFTClick, onMintNFTClick, onViewMyPropertiesClick, onSavingsClick, onHowItWorksClick, tenantPassportData, isCreatingWallet, setShowOnboarding, showOnboarding, activeNetwork, onNetworkChange }: HeaderProps) {
@@ -32,7 +32,7 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onDi
   const handleCloseOnboarding = () => setShowOnboarding(false);
 
   const handleNetworkChange = (event: SelectChangeEvent<string>) => {
-    onNetworkChange(event.target.value as 'paseo' | 'arbitrum');
+    onNetworkChange?.(event.target.value as 'paseo' | 'arbitrum');
   };
 
   const handleDisconnect = () => {
@@ -75,12 +75,12 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onDi
               {account && (
                 <>
                   <Button component={RouterLink} to="/create-pool" sx={{ color: 'primary.main', fontWeight: 600 }}>Crear Pool</Button>
-                  <Button onClick={onViewMyPropertiesClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
-                  <Button onClick={onSavingsClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Bóveda</Button>
+                  <Button onClick={() => onViewMyPropertiesClick?.()} sx={{ color: 'primary.main', fontWeight: 600 }}>Mis Propiedades</Button>
+                  <Button onClick={() => onSavingsClick?.()} sx={{ color: 'primary.main', fontWeight: 600 }}>Bóveda</Button>
                 </>
               )}
               {/* Botones que siempre son visibles en desktop */}
-              <Button onClick={onHowItWorksClick} sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
+              <Button onClick={() => onHowItWorksClick?.()} sx={{ color: 'primary.main', fontWeight: 600 }}>Como funciona</Button>
               <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Verifica roomie</Button>
               <Button sx={{ color: 'primary.main', fontWeight: 600 }}>Para empresas</Button>
             </Box>
@@ -128,8 +128,8 @@ export default function Header({ account, tokenBalance, onFundingModalOpen, onDi
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{tokenBalance?.toFixed(2)} MXNB</Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{`${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`}</Typography>
                   </Box>
-                  <Button variant="contained" size="small" onClick={onFundingModalOpen}>Añadir Fondos</Button>
-                  <Button variant="outlined" size="small" onClick={onViewNFTClick}>Ver mi NFT</Button>
+                  <Button variant="contained" size="small" onClick={() => onFundingModalOpen?.()}>Añadir Fondos</Button>
+                  <Button variant="outlined" size="small" onClick={() => onViewNFTClick?.()}>Ver mi NFT</Button>
                   <Button variant="text" size="small" onClick={handleDisconnect} color="error">Desconectar</Button>
                 </Paper>
               ) : (

@@ -1,0 +1,50 @@
+[
+  {
+    "inputs": [
+      {"name": "propertyId", "type": "bytes32"},
+      {"name": "tenant", "type": "address"},
+      {"name": "monthlyRent", "type": "uint256"},
+      {"name": "securityDeposit", "type": "uint256"},
+      {"name": "duration", "type": "uint256"}
+    ],
+    "name": "createAgreement",
+    "outputs": [
+      {"name": "agreementAddress", "type": "address"}
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "tenant", "type": "address"}
+    ],
+    "name": "getTenantAgreements",
+    "outputs": [
+      {"name": "", "type": "address[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "landlord", "type": "address"}
+    ],
+    "name": "getLandlordAgreements",
+    "outputs": [
+      {"name": "", "type": "address[]"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "name": "agreementAddress", "type": "address"},
+      {"indexed": true, "name": "landlord", "type": "address"},
+      {"indexed": true, "name": "tenant", "type": "address"},
+      {"indexed": false, "name": "propertyId", "type": "bytes32"}
+    ],
+    "name": "AgreementCreated",
+    "type": "event"
+  }
+]

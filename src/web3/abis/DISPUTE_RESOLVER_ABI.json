@@ -1,0 +1,43 @@
+[
+  {
+    "inputs": [
+      {"name": "agreementAddress", "type": "address"},
+      {"name": "reason", "type": "uint8"},
+      {"name": "evidenceURI", "type": "string"},
+      {"name": "amountInDispute", "type": "uint256"}
+    ],
+    "name": "createDispute",
+    "outputs": [
+      {"name": "disputeId", "type": "uint256"}
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "disputeId", "type": "uint256"}
+    ],
+    "name": "getDispute",
+    "outputs": [
+      {"name": "", "type": "tuple", "components": [
+        {"name": "initiator", "type": "address"},
+        {"name": "respondent", "type": "address"},
+        {"name": "agreementAddress", "type": "address"},
+        {"name": "reason", "type": "uint8"},
+        {"name": "status", "type": "uint8"}
+      ]}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"name": "disputeId", "type": "uint256"},
+      {"name": "forInitiator", "type": "bool"}
+    ],
+    "name": "vote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

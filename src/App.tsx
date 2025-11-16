@@ -27,6 +27,8 @@ import PropertyRegistryPage from './PropertyRegistryPage';
 import SubwalletAuthModal from './SubwalletAuthModal';
 import WalletModal, { WalletType } from './WalletModal';
 import Header from './Header';
+import RentalAgreementView from './components/RentalAgreementView';
+import MyAgreementsPage from './components/MyAgreementsPage';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
 import { useUser, UserProvider } from './UserContext';
@@ -241,6 +243,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [showFundingModal, setShowFundingModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
@@ -586,6 +589,7 @@ function App() {
     
     setAccount(null);
     setProvider(null);
+    setSigner(null);
     setTenantPassportData(null);
     setTokenBalance(0);
     localStorage.removeItem('walletType');
@@ -626,6 +630,7 @@ function App() {
       const currentAccount = accounts[0];
 
       setProvider(browserProvider);
+      setSigner(currentSigner);
       setAccount(currentAccount);
       localStorage.setItem('walletType', walletType);
       
@@ -660,6 +665,7 @@ function App() {
       
       setAccount(null);
       setProvider(null);
+      setSigner(null);
     }
   };
 
@@ -999,6 +1005,7 @@ function App() {
         } else {
           setAccount(null);
           setProvider(null);
+          setSigner(null);
         }
       };
 
@@ -1013,13 +1020,20 @@ function App() {
           setActiveNetwork('arbitrum');
         }
         
-        // Re-inicializar el provider
+        // Re-inicializar el provider y signer
         if (window.ethereum) {
           const newProvider = new ethers.BrowserProvider(window.ethereum);
           setProvider(newProvider);
           
-          // Refrescar balance si hay cuenta conectada
+          // Obtener nuevo signer
           if (account) {
+            newProvider.getSigner().then(newSigner => {
+              setSigner(newSigner);
+            }).catch(err => {
+              console.error('Error obteniendo signer:', err);
+            });
+            
+            // Refrescar balance
             fetchTokenBalance(newProvider, account);
           }
         }
@@ -1057,6 +1071,14 @@ function App() {
             
             setAccount(accounts[0]);
             setProvider(browserProvider);
+            
+            // Obtener signer
+            try {
+              const currentSigner = await browserProvider.getSigner();
+              setSigner(currentSigner);
+            } catch (err) {
+              console.error('Error obteniendo signer:', err);
+            }
           }
         } catch (error) {
           console.error('Error al verificar conexión existente:', error);
@@ -1822,6 +1844,26 @@ function App() {
             />
             <DashboardPage />
           </>
+        } />
+        <Route path="/agreements" element={
+          <MyAgreementsPage
+            provider={provider}
+            signer={signer}
+            account={account}
+            activeNetwork={activeNetwork}
+            onDisconnect={disconnectWallet}
+            setShowOnboarding={setShowOnboarding}
+          />
+        } />
+        <Route path="/agreement/:address" element={
+          <RentalAgreementView
+            provider={provider}
+            signer={signer}
+            account={account}
+            activeNetwork={activeNetwork}
+            onDisconnect={disconnectWallet}
+            setShowOnboarding={setShowOnboarding}
+          />
         } />
       </Routes>
 
