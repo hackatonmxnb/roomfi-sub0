@@ -1,14 +1,3 @@
-#!/bin/bash
-
-# ============================================================================
-# 🧪 RoomFi Mirrors Testing Script
-# ============================================================================
-# Tests the deployed Mirror contracts on Arbitrum Sepolia
-# Verifies functionality and demonstrates cross-chain capabilities
-#
-# Author: RoomFi Team
-# Date: 2025-01-15
-# ============================================================================
 
 set -e
 
