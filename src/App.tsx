@@ -23,6 +23,8 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import CreatePoolPage from './CreatePoolPage';
 import RegisterPage from './RegisterPage';
+import PropertyRegistryPage from './PropertyRegistryPage';
+import SubwalletAuthModal from './SubwalletAuthModal';
 import Header from './Header';
 import Portal from '@portal-hq/web';
 import { renderAmenityIcon, getDaysAgo } from './utils/icons';
@@ -246,6 +248,7 @@ function App() {
   const [tokenBalance, setTokenBalance] = useState<number>(0);
   const [tokenDecimals, setTokenDecimals] = useState<number>(18); // Default to 18, will be updated
   const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
+  const [showSubwalletAuthModal, setShowSubwalletAuthModal] = useState(false);
 
   // --- NUEVOS ESTADOS PARA LA BÓVEDA ---
   const [showVaultModal, setShowVaultModal] = useState(false);
@@ -661,7 +664,13 @@ function App() {
       console.error("❌ Error al conectar wallet:", error);
       
       let errorMessage = 'Error al conectar con la wallet.';
-      if (error.code === 4001) {
+      
+      // Detectar error de Subwallet en producción y mostrar modal visual
+      if (error.message && error.message.includes('not been authorized')) {
+        console.log('🔐 Detectado error de autorización de Subwallet');
+        setShowSubwalletAuthModal(true);
+        return; // No mostrar notificación, el modal es más claro
+      } else if (error.code === 4001) {
         errorMessage = 'Conexión rechazada por el usuario.';
       } else if (error.message) {
         errorMessage = error.message;
@@ -710,60 +719,9 @@ function App() {
     }
   }, [activeNetwork]);
 
-  const handleViewMyProperties = async () => {
-    if (!account || !provider) {
-      setNotification({ open: true, message: 'Por favor, conecta tu wallet primero.', severity: 'error' });
-      return;
-    }
-    if (!(await checkNetwork(provider))) return;
-
-    try {
-      // --- DEBUGGING STEP ---
-      const network = await provider.getNetwork();
-      const contractAddress = PROPERTY_INTEREST_POOL_ADDRESS;
-      console.log(`[DEBUG] Intentando llamar a 'propertyCounter' en:`);
-      console.log(`[DEBUG] Contrato: ${contractAddress}`);
-      console.log(`[DEBUG] Chain ID: ${network.chainId}`);
-      const code = await provider.getCode(contractAddress);
-      console.log(`[DEBUG] Bytecode en la dirección: ${code.substring(0, 40)}...`);
-      if (code === '0x') {
-        setNotification({ open: true, message: '[DEBUG] ¡Error Crítico! No se encontró código de contrato en la dirección proporcionada. Verifica que el contrato esté desplegado y la dirección sea correcta.', severity: 'error' });
-        return;
-      }
-      // --- END DEBUGGING ---
-
-      const contract = new ethers.Contract(PROPERTY_INTEREST_POOL_ADDRESS, PROPERTY_INTEREST_POOL_ABI, provider);
-      const propertyIds = await contract.getPropertiesByLandlord(account);
-      
-      const properties = [];
-      for (const id of propertyIds) {
-        const p = await contract.getPropertyInfo(id);
-        properties.push({
-          id: id,
-          name: p[0],
-          description: p[1],
-          landlord: p[2],
-          totalRentAmount: p[3],
-          seriousnessDeposit: p[4],
-          requiredTenantCount: p[5],
-          amountPooledForRent: p[6],
-          amountInVault: p[7],
-          interestedTenants: p[8],
-          state: Number(p[9]),
-          paymentDayStart: p[10],
-          paymentDayEnd: p[11],
-        });
-      }
-
-      setMyProperties(properties);
-      setShowMyPropertiesModal(true);
-    } catch (error: any) {
-      console.error("Error fetching properties:", error);
-      const errorMessage = error.code === 'BAD_DATA' 
-        ? 'No se pudo leer la información del contrato. ¿Estás en la red correcta?' 
-        : 'Error al obtener tus propiedades.';
-      setNotification({ open: true, message: errorMessage, severity: 'error' });
-    }
+  const handleViewMyProperties = () => {
+    // V2: Navegar a la nueva página de PropertyRegistry
+    navigate('/properties');
   };
 
   const getOrCreateTenantPassport = useCallback(async (userAddress: string) => {
@@ -1848,6 +1806,18 @@ function App() {
             <CreatePoolPage account={account} tokenDecimals={tokenDecimals} />
           </>
         } />
+        <Route path="/properties" element={
+          <PropertyRegistryPage
+            account={account}
+            provider={provider}
+            activeNetwork={activeNetwork}
+            onNetworkChange={(net) => setActiveNetwork(net)}
+            onDisconnect={disconnectWallet}
+            onConnectMetaMask={connectWithMetaMask}
+            tokenBalance={tokenBalance}
+            tenantPassportData={tenantPassportData}
+          />
+        } />
         <Route path="/dashboard" element={
           <>
             <Header
@@ -2005,6 +1975,13 @@ function App() {
           </Typography>
         </Paper>
       </Modal>
+
+      {/* Modal de Autorización de Subwallet */}
+      <SubwalletAuthModal 
+        open={showSubwalletAuthModal}
+        onClose={() => setShowSubwalletAuthModal(false)}
+        domain={window.location.origin}
+      />
     </>
   );
 }
