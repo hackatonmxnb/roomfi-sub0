@@ -126,7 +126,7 @@ contract TenantPassportMirror is Ownable {
 
     /**
      * @notice Inicializa el mirror contract
-     * @param _ismpHandler Address del ISMPMessageHandler
+     * @param _ismpHandler Address del ISMPMessageHandler (puede ser 0x0, configurar después)
      * @param _sourceChainId Chain ID de Paseo (source)
      * @param initialOwner Owner del contrato
      */
@@ -135,7 +135,7 @@ contract TenantPassportMirror is Ownable {
         uint256 _sourceChainId,
         address initialOwner
     ) Ownable(initialOwner) {
-        require(_ismpHandler != address(0), "Invalid ISMP handler");
+        // Permitir address(0) para configurar después con setISMPHandler
         ismpMessageHandler = _ismpHandler;
         sourceChainId = _sourceChainId;
         lastGlobalSync = block.timestamp;

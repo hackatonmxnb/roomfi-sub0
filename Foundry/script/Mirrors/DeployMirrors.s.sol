@@ -110,18 +110,26 @@ contract DeployMirrors is Script {
         // PASO 3: Deploy ISMPMessageHandler
         // ==============================================
         console.log("3. Deploying ISMPMessageHandler...");
-        console.log("   NOTE: Using official Hyperbridge SDK (BaseIsmpModule)");
-        console.log("   Hyperbridge Host is auto-detected by chainId");
+
+        // Obtener Hyperbridge Host address (puede ser env var o 0x0 para auto-detect)
+        address hyperbridgeHost = vm.envOr("HYPERBRIDGE_HOST_ADDRESS", address(0));
+
+        if (hyperbridgeHost == address(0)) {
+            console.log("   Using BaseIsmpModule auto-detection for Hyperbridge Host");
+        } else {
+            console.log("   Using custom Hyperbridge Host:", hyperbridgeHost);
+        }
 
         messageHandler = new ISMPMessageHandler(
             config.paseoChainId,      // Paseo chain ID en formato ISMP
             address(tenantMirror),    // TenantPassportMirror
             address(propertyMirror),  // PropertyRegistryMirror
+            hyperbridgeHost,          // Hyperbridge Host (0x0 = auto-detect)
             deployer                  // initialOwner
         );
 
         console.log("   ISMPMessageHandler deployed at:", address(messageHandler));
-        console.log("   Hyperbridge Host auto-detected:", messageHandler.host());
+        console.log("   Hyperbridge Host (effective):", messageHandler.getEffectiveHost());
         console.log("");
 
         // ==============================================
@@ -180,8 +188,8 @@ contract DeployMirrors is Script {
             '    "PropertyRegistryMirror": "', vm.toString(address(propertyMirror)), '",\n',
             '    "ISMPMessageHandler": "', vm.toString(address(messageHandler)), '"\n',
             '  },\n',
-            '  "hyperbridgeHost": "', vm.toString(messageHandler.host()), '",\n',
-            '  "hyperbridgeHostNote": "Auto-detected by BaseIsmpModule",\n',
+            '  "hyperbridgeHost": "', vm.toString(messageHandler.getEffectiveHost()), '",\n',
+            '  "hyperbridgeHostNote": "Auto-detected or custom configured",\n',
             '  "paseoChainId": ', vm.toString(config.sourceChainId), '\n',
             '}'
         ));

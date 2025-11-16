@@ -14,9 +14,9 @@ sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", default-featu
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", default-features = false, branch = "master" }
 
-# Hyperbridge ISMP
-pallet-ismp = { version = "1.0.0", default-features = false }
-ismp = { version = "1.0.0", default-features = false }
+# Hyperbridge ISMP - Usando paths relativos al repo local
+pallet-ismp = { path = "../../lib/hyperbridge/modules/ismp/pallet", default-features = false }
+ismp = { path = "../../lib/hyperbridge/modules/ismp/core", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "master" }
@@ -38,3 +38,6 @@ std = [
 # Feature flag para usar mock data de PolkaVM (hackathon)
 # Para producción, compilar sin este flag
 mock-polkavm = []
+
+[workspace]
+# Necesario para resolver las dependencias locales

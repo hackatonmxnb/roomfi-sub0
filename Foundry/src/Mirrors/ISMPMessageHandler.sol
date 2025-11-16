@@ -67,8 +67,9 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
 
     // Storage
 
-    // NOTE: hyperbridgeHost is provided by BaseIsmpModule via host() function
-    // No need to store it separately
+    /// @notice Hyperbridge IsmpHost address custom (para chains no soportadas por default)
+    /// @dev Si es 0x0, usa el host() de BaseIsmpModule. Si no, usa este.
+    address public immutable customHyperbridgeHost;
 
     /// @notice Chain ID de Paseo (source autorizado)
     bytes public paseoChainId;
@@ -143,13 +144,15 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
      * @param _paseoChainId Chain ID de Paseo en formato ISMP
      * @param _tenantMirror Address del TenantPassportMirror
      * @param _propertyMirror Address del PropertyRegistryMirror
+     * @param _customHost Address del IsmpHost custom (0x0 = usar BaseIsmpModule default)
      * @param initialOwner Owner del contrato
-     * @dev hyperbridgeHost es obtenido automáticamente por BaseIsmpModule.host()
+     * @dev Si _customHost es 0x0, usa BaseIsmpModule.host() default
      */
     constructor(
         bytes memory _paseoChainId,
         address _tenantMirror,
         address _propertyMirror,
+        address _customHost,
         address initialOwner
     ) BaseIsmpModule() Ownable(initialOwner) {
         require(_tenantMirror != address(0), "Invalid tenant mirror");
@@ -158,6 +161,66 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
         paseoChainId = _paseoChainId;
         tenantPassportMirror = _tenantMirror;
         propertyRegistryMirror = _propertyMirror;
+        customHyperbridgeHost = _customHost;
+    }
+
+    /**
+     * @notice Obtiene el address del IsmpHost efectivo
+     * @dev Prioridad: 1) customHost, 2) auto-detect extendido, 3) BaseIsmpModule default
+     */
+    function getEffectiveHost() public view returns (address) {
+        // 1. Si hay custom host configurado, usarlo
+        if (customHyperbridgeHost != address(0)) {
+            return customHyperbridgeHost;
+        }
+
+        // 2. Auto-detect extendido para chains no soportadas por BaseIsmpModule
+        address extendedHost = _getExtendedHostAddress();
+        if (extendedHost != address(0)) {
+            return extendedHost;
+        }
+
+        // 3. Fallback a BaseIsmpModule.host() (Ethereum, Arbitrum, etc.)
+        return host();
+    }
+
+    /**
+     * @notice Auto-detect extendido para chains adicionales
+     * @dev Agrega soporte para Moonbase Alpha y otras testnets
+     */
+    function _getExtendedHostAddress() internal view returns (address) {
+        uint256 chainId = block.chainid;
+
+        // Moonbase Alpha (Moonbeam Testnet)
+        if (chainId == 1287) {
+            // TODO: Obtener address oficial del IsmpHost en Moonbase Alpha
+            // Por ahora retornamos 0x0 para que use fallback
+            // Cuando Hyperbridge despliegue en Moonbase, actualizar aquí
+            return address(0);
+        }
+
+        // Moonbeam Mainnet
+        if (chainId == 1284) {
+            // TODO: Address del IsmpHost en Moonbeam Mainnet cuando esté disponible
+            return address(0);
+        }
+
+        // AssetHub Paseo
+        if (chainId == 420420422) {
+            // TODO: Address del IsmpHost en AssetHub Paseo
+            return address(0);
+        }
+
+        // No hay auto-detect para esta chain
+        return address(0);
+    }
+
+    /**
+     * @dev Modifier personalizado que verifica el caller contra el host efectivo
+     */
+    modifier onlyEffectiveHost() {
+        require(msg.sender == getEffectiveHost(), "Unauthorized: not host");
+        _;
     }
 
     // IIsmpModule Implementation
@@ -169,7 +232,7 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
     function onAccept(IncomingPostRequest memory incoming)
         external
         override
-        onlyHost
+        onlyEffectiveHost
         whenNotPaused
         nonReentrant
     {
@@ -223,7 +286,7 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
     function onPostRequestTimeout(PostRequest memory request)
         external
         override
-        onlyHost
+        onlyEffectiveHost
     {
         // Log timeout pero no hacer nada crítico
         bytes32 requestHash = keccak256(abi.encode(request));
@@ -236,7 +299,7 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
     function onPostResponse(IncomingPostResponse memory)
         external
         override
-        onlyHost
+        onlyEffectiveHost
     {
         // No esperamos responses en este diseño, solo posts one-way
         // Pero implementamos por interfaz
@@ -248,7 +311,7 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
     function onPostResponseTimeout(PostResponse memory)
         external
         override
-        onlyHost
+        onlyEffectiveHost
     {
         // No aplica en nuestro caso
     }
@@ -259,7 +322,7 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
     function onGetResponse(IncomingGetResponse memory)
         external
         override
-        onlyHost
+        onlyEffectiveHost
     {
         // No usamos GET requests en este diseño
         revert UnexpectedCall();
@@ -271,7 +334,7 @@ contract ISMPMessageHandler is BaseIsmpModule, Ownable, ReentrancyGuard {
     function onGetTimeout(GetRequest memory)
         external
         override
-        onlyHost
+        onlyEffectiveHost
     {
         // No usamos GET requests en este diseño
         revert UnexpectedCall();
